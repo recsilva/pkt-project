@@ -1,6 +1,6 @@
-Repo created for the Noll programming language created for a university class.
+## Repo created for the *Noll* programming language created for a university class.
 
 ### Used tools
-lexer: flex
-parser: bison
-compiler: llvm
+lexer: flex \
+parser: bison \
+compiler: llvm 
