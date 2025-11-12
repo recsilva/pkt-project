@@ -1,5 +1,5 @@
 #include "nodes/programnode.h"
-#include "nodes/visitor.h"
+#include "nodes/cppvisitor.h"
 
 using namespace std;
 
@@ -8,7 +8,7 @@ extern int yyparse();
 
 int main(int argc, char **argv) {
     yyparse();
-    Visitor v;
+    CPPVisitor v("src.cpp");
     program->accept(v);
     return 0;
 }
