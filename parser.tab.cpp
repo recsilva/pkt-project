@@ -67,14 +67,32 @@
 
 
 /* First part of user prologue.  */
-#line 1 "parser.y"
+#line 1 "parser.ypp"
 
+    #include <assert.h>
     #include <iostream>
+    #include "nodes/node.h"
+    #include "nodes/minusnode.h"
+    #include "nodes/plusnode.h"
+    #include "nodes/multnode.h"
+    #include "nodes/divnode.h"
+    #include "nodes/expnode.h"
+    #include "nodes/integernode.h"
+    #include "nodes/floatnode.h"
+    #include "nodes/programnode.h"
+    #include "nodes/statementnode.h"
+    #include "scanner.c"
+    
     using namespace std;
-    extern "C" void yyerror(char *s);
-    extern "C" int yyparse();
+    extern "C" int yylex(void);
+    extern int yylineno;
 
-#line 78 "parser.tab.c"
+    void yyerror(const char *s) {
+        cerr << "Error (line " << yylineno << "): " << s << endl;
+    }
+    ProgramNode *program;
+
+#line 96 "parser.tab.cpp"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -97,60 +115,7 @@
 #  endif
 # endif
 
-
-/* Debug traces.  */
-#ifndef YYDEBUG
-# define YYDEBUG 0
-#endif
-#if YYDEBUG
-extern int yydebug;
-#endif
-
-/* Token kinds.  */
-#ifndef YYTOKENTYPE
-# define YYTOKENTYPE
-  enum yytokentype
-  {
-    YYEMPTY = -2,
-    YYEOF = 0,                     /* "end of file"  */
-    YYerror = 256,                 /* error  */
-    YYUNDEF = 257,                 /* "invalid token"  */
-    INTEGER_LITERAL = 258,         /* INTEGER_LITERAL  */
-    FLOAT_LITERAL = 259,           /* FLOAT_LITERAL  */
-    SEMI = 260,                    /* SEMI  */
-    PLUS = 261,                    /* PLUS  */
-    MINUS = 262,                   /* MINUS  */
-    MULT = 263,                    /* MULT  */
-    DIV = 264                      /* DIV  */
-  };
-  typedef enum yytokentype yytoken_kind_t;
-#endif
-
-/* Value type.  */
-#if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-union YYSTYPE
-{
-#line 8 "parser.y"
-
-    int intVal;
-    float floatVal;
-
-#line 139 "parser.tab.c"
-
-};
-typedef union YYSTYPE YYSTYPE;
-# define YYSTYPE_IS_TRIVIAL 1
-# define YYSTYPE_IS_DECLARED 1
-#endif
-
-
-extern YYSTYPE yylval;
-
-
-int yyparse (void);
-
-
-
+#include "parser.tab.hpp"
 /* Symbol kind.  */
 enum yysymbol_kind_t
 {
@@ -555,8 +520,8 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int8 yyrline[] =
 {
-       0,    24,    24,    25,    28,    31,    32,    33,    34,    35,
-      36
+       0,    46,    46,    47,    50,    54,    55,    56,    57,    58,
+      59
 };
 #endif
 
@@ -1120,50 +1085,62 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
+  case 2: /* program: %empty  */
+#line 46 "parser.ypp"
+         { program = new ProgramNode(yylineno); }
+#line 1092 "parser.tab.cpp"
+    break;
+
   case 3: /* program: program statement  */
-#line 25 "parser.y"
-                        { cout << "Result: " << (yyvsp[0].floatVal) << endl; }
-#line 1127 "parser.tab.c"
+#line 47 "parser.ypp"
+                        { assert(program); program->addStatement((yyvsp[0].statementNode)); }
+#line 1098 "parser.tab.cpp"
+    break;
+
+  case 4: /* statement: exp SEMI  */
+#line 50 "parser.ypp"
+                    { (yyval.statementNode) = new StatementNode(yylineno, (yyvsp[-1].expNode)); }
+#line 1104 "parser.tab.cpp"
     break;
 
   case 5: /* exp: INTEGER_LITERAL  */
-#line 31 "parser.y"
-                    { (yyval.floatVal) = (yyvsp[0].intVal); }
-#line 1133 "parser.tab.c"
+#line 54 "parser.ypp"
+                    { (yyval.expNode) = new IntegerNode(yylineno, (yyvsp[0].intVal)); }
+#line 1110 "parser.tab.cpp"
     break;
 
   case 6: /* exp: FLOAT_LITERAL  */
-#line 32 "parser.y"
-                    { (yyval.floatVal) = (yyvsp[0].floatVal); }
-#line 1139 "parser.tab.c"
+#line 55 "parser.ypp"
+                    { (yyval.expNode) = new FloatNode(yylineno, (yyvsp[0].floatVal)); }
+#line 1116 "parser.tab.cpp"
     break;
 
   case 7: /* exp: exp PLUS exp  */
-#line 33 "parser.y"
-                    { (yyval.floatVal) = (yyvsp[-2].floatVal) + (yyvsp[0].floatVal); }
-#line 1145 "parser.tab.c"
+#line 56 "parser.ypp"
+                    { (yyval.expNode) = new PlusNode(yylineno, (yyvsp[-2].expNode), (yyvsp[0].expNode)); }
+#line 1122 "parser.tab.cpp"
     break;
 
   case 8: /* exp: exp MINUS exp  */
-#line 34 "parser.y"
-                    { (yyval.floatVal) = (yyvsp[-2].floatVal) - (yyvsp[0].floatVal); }
-#line 1151 "parser.tab.c"
+#line 57 "parser.ypp"
+                    { (yyval.expNode) = new MinusNode(yylineno, (yyvsp[-2].expNode), (yyvsp[0].expNode)); }
+#line 1128 "parser.tab.cpp"
     break;
 
   case 9: /* exp: exp MULT exp  */
-#line 35 "parser.y"
-                    { (yyval.floatVal) = (yyvsp[-2].floatVal) * (yyvsp[0].floatVal); }
-#line 1157 "parser.tab.c"
+#line 58 "parser.ypp"
+                    { (yyval.expNode) = new MultNode(yylineno, (yyvsp[-2].expNode), (yyvsp[0].expNode)); }
+#line 1134 "parser.tab.cpp"
     break;
 
   case 10: /* exp: exp DIV exp  */
-#line 36 "parser.y"
-                    { (yyval.floatVal) = (yyvsp[-2].floatVal) / (yyvsp[0].floatVal); }
-#line 1163 "parser.tab.c"
+#line 59 "parser.ypp"
+                    { (yyval.expNode) = new DivNode(yylineno, (yyvsp[-2].expNode), (yyvsp[0].expNode)); }
+#line 1140 "parser.tab.cpp"
     break;
 
 
-#line 1167 "parser.tab.c"
+#line 1144 "parser.tab.cpp"
 
       default: break;
     }
@@ -1356,27 +1333,3 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 38 "parser.y"
-
-int main(int argc, char **argv) {
-    if (argc < 2) {
-    cout << "Provide a filename to parse!" << endl;
-    exit(1);
-    }
-    FILE *sourceFile = fopen(argv[1], "r");
-
-    if (!sourceFile) {
-    cout << "Could not open source file " << argv[1] << endl;
-    exit(1);
-    }
-
-    // Sets input for flex to the file instead of standard in
-    yyin = sourceFile;
-    // Now let's parse it!
-    yyparse();
-}
-
-// Called on error with message s
-void yyerror(char *s) {
-    cerr << s << endl;
-}
