@@ -11,7 +11,7 @@
   #include "nodes/floatnode.h"
   #include "nodes/programnode.h"
   #include "nodes/statementnode.h"
-  
+  #include "scanner.c"
 
   using namespace std;
   extern "C" int yylex(void);

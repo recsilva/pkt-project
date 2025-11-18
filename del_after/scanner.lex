@@ -1,6 +1,6 @@
 /* Definitions */
 %{
-    #include "parser.tab.cpp"
+    #include "parser.tab.hpp"
     extern "C" int yylex();
 %}
 %option noyywrap
