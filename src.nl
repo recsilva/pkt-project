@@ -1,3 +1,13 @@
-3 + 3.2;
-5 + 2 * 3 - 8;
-1.1 - 1.1 + 1.1 - 1.1 * 1;
+2 + 4;
+pi = 3.1415926535;
+array[100]:0;
+some_random_number = 1;
+pi; 
+some_random_number;
+pi = pi + some_random_number;
+pi;
+array[0];
+array[0] = 100;
+array[5] = 5;
+array[5];
+array[0];

@@ -9,6 +9,11 @@
 #include "divnode.h"
 #include "integernode.h"
 #include "floatnode.h"
+#include "identifiernode.h"
+#include "assignmentnode.h"
+#include "arraydefnode.h"
+#include "arrayaccessnode.h"
+#include "arrayassignnode.h"
 
 class Visitor {
 public:
@@ -20,6 +25,11 @@ public:
     virtual void visit(MinusNode *node);
     virtual void visit(MultNode *node);
     virtual void visit(DivNode *node);
+    virtual void visit(IdentifierNode *node); 
+    virtual void visit(AssignmentNode *node); 
+    virtual void visit(ArrayDefNode *node);
+    virtual void visit(ArrayAccessNode *node);
+    virtual void visit(ArrayAssignNode *node);
 };
 
 #endif

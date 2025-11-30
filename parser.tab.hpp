@@ -56,11 +56,16 @@ extern int yydebug;
     YYUNDEF = 257,                 /* "invalid token"  */
     INTEGER_LITERAL = 258,         /* INTEGER_LITERAL  */
     FLOAT_LITERAL = 259,           /* FLOAT_LITERAL  */
-    SEMI = 260,                    /* SEMI  */
-    PLUS = 261,                    /* PLUS  */
-    MINUS = 262,                   /* MINUS  */
-    MULT = 263,                    /* MULT  */
-    DIV = 264                      /* DIV  */
+    ID = 260,                      /* ID  */
+    SEMI = 261,                    /* SEMI  */
+    ASSIGN = 262,                  /* ASSIGN  */
+    ARRAY_START = 263,             /* ARRAY_START  */
+    ARRAY_END = 264,               /* ARRAY_END  */
+    DEFINE_DEFAULT = 265,          /* DEFINE_DEFAULT  */
+    PLUS = 266,                    /* PLUS  */
+    MINUS = 267,                   /* MINUS  */
+    MULT = 268,                    /* MULT  */
+    DIV = 269                      /* DIV  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -69,15 +74,16 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 26 "parser.ypp"
+#line 31 "parser.ypp"
 
   int intVal;
   float floatVal;
+  char *idName;
   class Node *node;
   class ExpNode *expNode;
   class StatementNode *statementNode;
 
-#line 81 "parser.tab.hpp"
+#line 87 "parser.tab.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

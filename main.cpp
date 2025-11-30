@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
     mod = std::make_unique<llvm::Module>("ECTLang module", context);
 
     yyparse();
-    llvm::StringRef filename = "test.ll";
+    llvm::StringRef filename = "temp.ll";
     std::error_code ec;
     llvm::raw_fd_ostream out(filename, ec);
     LLVMVisitor v(out, context, mod);
