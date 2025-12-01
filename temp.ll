@@ -26,10 +26,10 @@ body:                                             ; preds = %entry
   %2 = call i32 (ptr, ...) @printf(ptr @2, i32 %c3)
   %a4 = load i32, ptr %a, align 4
   %b5 = load i32, ptr %b, align 4
+  %3 = add i32 %a4, %b5
   %c6 = load i32, ptr %c, align 4
-  %3 = mul i32 %b5, %c6
-  %4 = add i32 %a4, %3
-  %5 = sub i32 %4, 2
+  %4 = sub i32 %c6, 2
+  %5 = mul i32 %3, %4
   %6 = add i32 %5, 10
   store i32 %6, ptr %d, align 4
   %d7 = load i32, ptr %d, align 4

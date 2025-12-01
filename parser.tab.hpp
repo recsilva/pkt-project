@@ -61,12 +61,14 @@ extern int yydebug;
     ASSIGN = 262,                  /* ASSIGN  */
     ARRAY_START = 263,             /* ARRAY_START  */
     ARRAY_END = 264,               /* ARRAY_END  */
-    DEFINE_DEFAULT = 265,          /* DEFINE_DEFAULT  */
-    PLUS = 266,                    /* PLUS  */
-    MINUS = 267,                   /* MINUS  */
-    MULT = 268,                    /* MULT  */
-    DIV = 269,                     /* DIV  */
-    UMINUS = 270                   /* UMINUS  */
+    PAREN_LEFT = 265,              /* PAREN_LEFT  */
+    PAREN_RIGHT = 266,             /* PAREN_RIGHT  */
+    DEFINE_DEFAULT = 267,          /* DEFINE_DEFAULT  */
+    PLUS = 268,                    /* PLUS  */
+    MINUS = 269,                   /* MINUS  */
+    MULT = 270,                    /* MULT  */
+    DIV = 271,                     /* DIV  */
+    UMINUS = 272                   /* UMINUS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -84,7 +86,7 @@ union YYSTYPE
   class ExpNode *expNode;
   class StatementNode *statementNode;
 
-#line 88 "parser.tab.hpp"
+#line 90 "parser.tab.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;
