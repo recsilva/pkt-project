@@ -17,5 +17,7 @@
 ";"           { return SEMI; }
 "["           { return ARRAY_START; }
 "]"           { return ARRAY_END; }
+"("           { return PAREN_LEFT; }
+")"           { return PAREN_RIGHT; }
 ":"           { return DEFINE_DEFAULT; }
 [ \t\r\n\f]+   ; /* ignore whitespace */
