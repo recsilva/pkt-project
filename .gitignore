@@ -1,2 +1,5 @@
 *.exe
 program
+parser.tab.*
+*.ll
+scanner.c
