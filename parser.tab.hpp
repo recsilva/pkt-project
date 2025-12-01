@@ -65,7 +65,8 @@ extern int yydebug;
     PLUS = 266,                    /* PLUS  */
     MINUS = 267,                   /* MINUS  */
     MULT = 268,                    /* MULT  */
-    DIV = 269                      /* DIV  */
+    DIV = 269,                     /* DIV  */
+    UMINUS = 270                   /* UMINUS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -83,7 +84,7 @@ union YYSTYPE
   class ExpNode *expNode;
   class StatementNode *statementNode;
 
-#line 87 "parser.tab.hpp"
+#line 88 "parser.tab.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;
