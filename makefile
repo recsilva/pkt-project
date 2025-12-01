@@ -8,7 +8,7 @@ CHILDREN := (Get-ChildItem nodes\*.cpp)
 
 run: $(PROG)
 ifeq ($(OS),Windows_NT)
-	.\$(PROG)
+	-@.\$(PROG)
 else
 	@./$(PROG) || true
 endif
@@ -22,14 +22,14 @@ endif
 
 temp.ll: src.nl nlc nlc
 ifeq ($(OS),Windows_NT)
-	type src.nl | .\nlc.exe
+	powershell.exe -Command "type src.nl | .\nlc.exe"
 else
 	./nlc < src.nl
 endif
 
 nlc: main.cpp parser.tab.cpp nodes/*.cpp
 ifeq ($(OS),Windows_NT)
-	g++ $^ $(CHILDREN) $(LLVM) -o nlc.exe
+	powershell.exe -Command "g++ $^ $(LLVM) -o nlc.exe"
 else
 #nlc: main.cpp parser.tab.cpp nodes/*.cpp
 	g++ $^ $(LLVM) -o $@
@@ -49,9 +49,7 @@ else
 	flex -o $@ $^
 endif
 
-# ifeq ($(OS),Windows_NT)
-# 	SHELL := powershell.exe
-# 	.SHELLFLAGS := -Command
+# 
 
 # 	CHILDREN := (Get-ChildItem nodes\*.cpp)
 
