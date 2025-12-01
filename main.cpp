@@ -13,8 +13,8 @@
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/Pass.h"
 
-#include "nodes/programnode.h"
-#include "nodes/llvmvisitor.h"
+// #include "nodes/programnode.h"
+#include "nodes/llvmvisitor.h" // include all nodes
 
 extern ProgramNode* program;
 extern int yyparse();

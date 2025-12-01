@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "multnode.h"
-#include "visitor.h"
+#include "../visitor.h"
 
 MultNode::MultNode(int line, ExpNode *left, ExpNode *right) :
     ExpNode(line), left(left), right(right) {}

@@ -1,8 +1,8 @@
 #ifndef ARRAYASSIGNNODE_H
 #define ARRAYASSIGNNODE_H
 
-#include "statementnode.h"
-#include "expnode.h"
+#include "../base/statementnode.h"
+#include "../base/expnode.h"
 #include <string>
 
 class ArrayAssignNode : public StatementNode {

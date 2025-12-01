@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "statementnode.h"
-#include "visitor.h"
+#include "../visitor.h"
 
 StatementNode::StatementNode(int line, ExpNode *exp) :
     Node(line), exp(exp) {}

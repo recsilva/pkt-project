@@ -1,8 +1,8 @@
 #ifndef ASSIGNMENT_NODE_H
 #define ASSIGNMENT_NODE_H
 #include <string>
-#include "statementnode.h"
-#include "expnode.h"
+#include "../base/statementnode.h"
+#include "../base/expnode.h"
 
 class AssignmentNode: public StatementNode {
 public:

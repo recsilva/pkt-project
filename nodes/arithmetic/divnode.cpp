@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "divnode.h"
-#include "visitor.h"
+#include "../visitor.h"
 
 DivNode::DivNode(int line, ExpNode *left, ExpNode *right) :
     ExpNode(line), left(left), right(right) {}

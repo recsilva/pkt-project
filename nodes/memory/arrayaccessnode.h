@@ -1,7 +1,7 @@
 #ifndef ARRAYACCESSNODE_H
 #define ARRAYACCESSNODE_H
 
-#include "expnode.h"
+#include "../base/expnode.h"
 #include <string>
 
 class ArrayAccessNode : public ExpNode {

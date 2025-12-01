@@ -1,5 +1,5 @@
 #include "identifiernode.h"
-#include "visitor.h"
+#include "../visitor.h"
 
 IdentifierNode::IdentifierNode(int line, const std::string& name)
     : ExpNode(line), name(name) {}

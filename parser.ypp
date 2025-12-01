@@ -1,22 +1,12 @@
 %{
     #include <assert.h>
     #include <iostream>
-    #include "nodes/node.h"
-    #include "nodes/minusnode.h"
-    #include "nodes/plusnode.h"
-    #include "nodes/multnode.h"
-    #include "nodes/divnode.h"
-    #include "nodes/expnode.h"
-    #include "nodes/integernode.h"
-    #include "nodes/floatnode.h"
-    #include "nodes/programnode.h"
-    #include "nodes/statementnode.h"
-    #include "nodes/identifiernode.h"
-    #include "nodes/assignmentnode.h"
+
+    #include "nodes/visitor.h" // includes all nodes 
+    //             (might change later, this is kind of a hack)
+    //             (some of the headers arent even used)
+
     #include "scanner.c"
-    #include "nodes/arraydefnode.h"
-    #include "nodes/arrayaccessnode.h"
-    #include "nodes/arrayassignnode.h"
     
     using namespace std;
     extern "C" int yylex(void);

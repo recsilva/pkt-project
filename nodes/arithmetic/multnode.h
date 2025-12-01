@@ -1,7 +1,7 @@
 #ifndef MULT_NODE_H
 #define MULT_NODE_H
 
-#include "expnode.h"
+#include "../base/expnode.h"
 
 class MultNode: public ExpNode {
 public:

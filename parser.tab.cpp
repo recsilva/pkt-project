@@ -71,22 +71,11 @@
 
     #include <assert.h>
     #include <iostream>
-    #include "nodes/node.h"
-    #include "nodes/minusnode.h"
-    #include "nodes/plusnode.h"
-    #include "nodes/multnode.h"
-    #include "nodes/divnode.h"
-    #include "nodes/expnode.h"
-    #include "nodes/integernode.h"
-    #include "nodes/floatnode.h"
-    #include "nodes/programnode.h"
-    #include "nodes/statementnode.h"
-    #include "nodes/identifiernode.h"
-    #include "nodes/assignmentnode.h"
+
+    #include "nodes/visitor.h" // includes all nodes 
+    //             (might change later, this is kind of a hack)
+
     #include "scanner.c"
-    #include "nodes/arraydefnode.h"
-    #include "nodes/arrayaccessnode.h"
-    #include "nodes/arrayassignnode.h"
     
     using namespace std;
     extern "C" int yylex(void);
@@ -97,7 +86,7 @@
     }
     ProgramNode *program;
 
-#line 101 "parser.tab.cpp"
+#line 90 "parser.tab.cpp"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -534,8 +523,8 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int8 yyrline[] =
 {
-       0,    61,    61,    62,    66,    67,    72,    73,    77,    78,
-      79,    80,    81,    82,    83,    84,    85
+       0,    50,    50,    51,    55,    56,    61,    62,    66,    67,
+      68,    69,    70,    71,    72,    73,    74
 };
 #endif
 
@@ -1119,100 +1108,100 @@ yyreduce:
   switch (yyn)
     {
   case 2: /* program: %empty  */
-#line 61 "parser.ypp"
+#line 50 "parser.ypp"
          { program = new ProgramNode(yylineno); }
-#line 1125 "parser.tab.cpp"
+#line 1114 "parser.tab.cpp"
     break;
 
   case 3: /* program: program statement  */
-#line 62 "parser.ypp"
+#line 51 "parser.ypp"
                         { assert(program); program->addStatement((yyvsp[0].statementNode)); }
-#line 1131 "parser.tab.cpp"
+#line 1120 "parser.tab.cpp"
     break;
 
   case 4: /* statement: ID ARRAY_START exp ARRAY_END DEFINE_DEFAULT exp SEMI  */
-#line 66 "parser.ypp"
+#line 55 "parser.ypp"
                                                            { (yyval.statementNode) = new ArrayDefNode(yylineno, strdup((yyvsp[-6].idName)), (yyvsp[-4].expNode), (yyvsp[-1].expNode)); free((yyvsp[-6].idName)); }
-#line 1137 "parser.tab.cpp"
+#line 1126 "parser.tab.cpp"
     break;
 
   case 5: /* statement: ID ARRAY_START exp ARRAY_END ASSIGN exp SEMI  */
-#line 68 "parser.ypp"
+#line 57 "parser.ypp"
       { 
           (yyval.statementNode) = new ArrayAssignNode(yylineno, strdup((yyvsp[-6].idName)), (yyvsp[-4].expNode), (yyvsp[-1].expNode)); 
           free((yyvsp[-6].idName)); 
       }
-#line 1146 "parser.tab.cpp"
+#line 1135 "parser.tab.cpp"
     break;
 
   case 6: /* statement: ID ASSIGN exp SEMI  */
-#line 72 "parser.ypp"
+#line 61 "parser.ypp"
                          { (yyval.statementNode) = new AssignmentNode(yylineno, strdup((yyvsp[-3].idName)), (yyvsp[-1].expNode)); free((yyvsp[-3].idName)); }
-#line 1152 "parser.tab.cpp"
+#line 1141 "parser.tab.cpp"
     break;
 
   case 7: /* statement: exp SEMI  */
-#line 73 "parser.ypp"
+#line 62 "parser.ypp"
                { (yyval.statementNode) = new StatementNode(yylineno, (yyvsp[-1].expNode)); }
-#line 1158 "parser.tab.cpp"
+#line 1147 "parser.tab.cpp"
     break;
 
   case 8: /* exp: INTEGER_LITERAL  */
-#line 77 "parser.ypp"
+#line 66 "parser.ypp"
                     { (yyval.expNode) = new IntegerNode(yylineno, (yyvsp[0].intVal)); }
-#line 1164 "parser.tab.cpp"
+#line 1153 "parser.tab.cpp"
     break;
 
   case 9: /* exp: FLOAT_LITERAL  */
-#line 78 "parser.ypp"
+#line 67 "parser.ypp"
                     { (yyval.expNode) = new FloatNode(yylineno, (yyvsp[0].floatVal)); }
-#line 1170 "parser.tab.cpp"
+#line 1159 "parser.tab.cpp"
     break;
 
   case 10: /* exp: ID  */
-#line 79 "parser.ypp"
+#line 68 "parser.ypp"
                     { (yyval.expNode) = new IdentifierNode(yylineno, strdup((yyvsp[0].idName))); free((yyvsp[0].idName)); }
-#line 1176 "parser.tab.cpp"
+#line 1165 "parser.tab.cpp"
     break;
 
   case 11: /* exp: exp PLUS exp  */
-#line 80 "parser.ypp"
+#line 69 "parser.ypp"
                     { (yyval.expNode) = new PlusNode(yylineno, (yyvsp[-2].expNode), (yyvsp[0].expNode)); }
-#line 1182 "parser.tab.cpp"
+#line 1171 "parser.tab.cpp"
     break;
 
   case 12: /* exp: exp MINUS exp  */
-#line 81 "parser.ypp"
+#line 70 "parser.ypp"
                     { (yyval.expNode) = new MinusNode(yylineno, (yyvsp[-2].expNode), (yyvsp[0].expNode)); }
-#line 1188 "parser.tab.cpp"
+#line 1177 "parser.tab.cpp"
     break;
 
   case 13: /* exp: exp MULT exp  */
-#line 82 "parser.ypp"
+#line 71 "parser.ypp"
                     { (yyval.expNode) = new MultNode(yylineno, (yyvsp[-2].expNode), (yyvsp[0].expNode)); }
-#line 1194 "parser.tab.cpp"
+#line 1183 "parser.tab.cpp"
     break;
 
   case 14: /* exp: exp DIV exp  */
-#line 83 "parser.ypp"
+#line 72 "parser.ypp"
                     { (yyval.expNode) = new DivNode(yylineno, (yyvsp[-2].expNode), (yyvsp[0].expNode)); }
-#line 1200 "parser.tab.cpp"
+#line 1189 "parser.tab.cpp"
     break;
 
   case 15: /* exp: ID ARRAY_START exp ARRAY_END  */
-#line 84 "parser.ypp"
+#line 73 "parser.ypp"
                                    { (yyval.expNode) = new ArrayAccessNode(yylineno, strdup((yyvsp[-3].idName)), (yyvsp[-1].expNode)); free((yyvsp[-3].idName)); }
-#line 1206 "parser.tab.cpp"
+#line 1195 "parser.tab.cpp"
     break;
 
   case 16: /* exp: PAREN_LEFT exp PAREN_RIGHT  */
-#line 85 "parser.ypp"
+#line 74 "parser.ypp"
                                               { (yyval.expNode) = (yyvsp[-1].expNode); }
-#line 1212 "parser.tab.cpp"
+#line 1201 "parser.tab.cpp"
     break;
 
 
-#line 1216 "parser.tab.cpp"
+#line 1205 "parser.tab.cpp"
 
       default: break;
     }

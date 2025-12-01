@@ -2,26 +2,15 @@
 #define LLVMVISITOR_H
 
 #include <fstream>
-#include <map>     // <-- NEW
-#include <string>  // <-- NEW
+#include <map>
+#include <string>
 
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
-#include "llvm/IR/Instructions.h" // Needed for AllocaInst
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/Instructions.h"
 
 #include "visitor.h"
-#include "programnode.h"
-#include "statementnode.h"
-#include "plusnode.h"
-#include "minusnode.h"
-#include "multnode.h"
-#include "divnode.h"
-#include "integernode.h"
-#include "floatnode.h"
-#include "identifiernode.h" // <-- NEW
-#include "assignmentnode.h" // <-- NEW
-#include "arrayaccessnode.h"
-#include "arrayassignnode.h"
 
 class LLVMVisitor : public Visitor {
 public:

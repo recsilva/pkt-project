@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "programnode.h"
-#include "visitor.h"
+#include "../visitor.h"
 
 ProgramNode::ProgramNode(int line) : Node(line) {}
 

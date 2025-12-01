@@ -1,5 +1,5 @@
 #include "assignmentnode.h"
-#include "visitor.h"
+#include "../visitor.h"
 
 AssignmentNode::AssignmentNode(int line, const std::string& name, ExpNode *exp)
     : StatementNode(line, exp), name(name), exp(exp) {}

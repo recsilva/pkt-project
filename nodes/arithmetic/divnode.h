@@ -1,7 +1,7 @@
 #ifndef DIV_NODE_H
 #define DIV_NODE_H
 
-#include "expnode.h"
+#include "../base/expnode.h"
 
 class DivNode: public ExpNode {
 public:

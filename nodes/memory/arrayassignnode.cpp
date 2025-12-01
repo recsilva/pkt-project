@@ -1,6 +1,6 @@
 #include "arrayassignnode.h"
-#include "visitor.h"
-#include "expnode.h"
+#include "../visitor.h"
+#include "../base/expnode.h"
 
 ArrayAssignNode::ArrayAssignNode(int line, 
                                  const std::string& name, 

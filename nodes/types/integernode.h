@@ -1,7 +1,7 @@
 #ifndef INTEGER_NODE_H
 #define INTEGER_NODE_H
 
-#include "expnode.h"
+#include "../base/expnode.h"
 
 class IntegerNode: public ExpNode {
 public:
