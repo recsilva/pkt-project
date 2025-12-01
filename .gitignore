@@ -1,4 +1,5 @@
 *.exe
+nlc
 program
 parser.tab.*
 *.ll

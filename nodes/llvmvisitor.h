@@ -19,8 +19,10 @@ public:
                std::unique_ptr<llvm::Module> &mod);
     void visit(ProgramNode *node);
     void visit(StatementNode *node);
+    
     void visit(IntegerNode *node);
     void visit(FloatNode *node);
+
     void visit(PlusNode *node);
     void visit(MinusNode *node);
     void visit(MultNode *node);
