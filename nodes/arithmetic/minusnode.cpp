@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "minusnode.h"
-#include "visitor.h"
+#include "../visitor.h"
 
 MinusNode::MinusNode(int line, ExpNode *left, ExpNode *right) :
     ExpNode(line), left(left), right(right) {}

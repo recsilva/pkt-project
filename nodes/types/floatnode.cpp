@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "floatnode.h"
-#include "visitor.h"
+#include "../visitor.h"
 
 FloatNode::FloatNode(int line, float value) :
     ExpNode(line), value(value) {}

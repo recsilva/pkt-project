@@ -1,7 +1,7 @@
 #ifndef PLUS_NODE_H
 #define PLUS_NODE_H
 
-#include "expnode.h"
+#include "../base/expnode.h"
 
 class PlusNode: public ExpNode {
 public:

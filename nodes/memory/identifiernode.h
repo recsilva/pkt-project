@@ -2,7 +2,7 @@
 #define IDENTIFIER_NODE_H
 
 #include <string>
-#include "expnode.h"
+#include "../base/expnode.h"
 
 class IdentifierNode: public ExpNode {
 public:

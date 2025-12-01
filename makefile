@@ -2,6 +2,8 @@
 LLVM := $(shell llvm-config --ldflags --libs --cxxflags)
 PROG = program
 
+DIRS = nodes/*.cpp nodes/base/*.cpp nodes/types/*.cpp nodes/memory/*.cpp nodes/arithmetic/*.cpp
+
 CHILDREN := (Get-ChildItem nodes\*.cpp)
 
 .PHONY: run, build
@@ -27,7 +29,7 @@ else
 	./nlc < src.nl
 endif
 
-nlc: main.cpp parser.tab.cpp nodes/*.cpp
+nlc: main.cpp parser.tab.cpp $(DIRS)
 ifeq ($(OS),Windows_NT)
 	powershell.exe -Command "g++ $^ $(LLVM) -o nlc.exe"
 else

@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "plusnode.h"
-#include "visitor.h"
+#include "../visitor.h"
 
 PlusNode::PlusNode(int line, ExpNode *left, ExpNode *right) :
     ExpNode(line), left(left), right(right) {}

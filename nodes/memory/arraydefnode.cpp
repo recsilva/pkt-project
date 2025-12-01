@@ -1,5 +1,5 @@
 #include "arraydefnode.h"
-#include "visitor.h"
+#include "../visitor.h"
 
 ArrayDefNode::ArrayDefNode(int line, 
                            const std::string& name, 

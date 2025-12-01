@@ -1,21 +1,4 @@
-#include <fstream>
-#include <iostream>
-
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/Instructions.h" // Required for AllocaInst
-
 #include "llvmvisitor.h"
-#include "programnode.h"
-#include "statementnode.h"
-#include "plusnode.h"
-#include "minusnode.h"
-#include "multnode.h"
-#include "divnode.h"
-#include "integernode.h"
-#include "floatnode.h"
-#include "identifiernode.h"
-#include "assignmentnode.h"
-#include "arrayaccessnode.h"
 
 // Helper function to create a stack allocation in the entry block of a function
 llvm::AllocaInst *LLVMVisitor::createEntryBlockAlloca(llvm::Function *function,

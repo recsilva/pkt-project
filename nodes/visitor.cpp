@@ -1,8 +1,4 @@
-#include <iostream>
-
 #include "visitor.h"
-#include "identifiernode.h" // Include headers for new nodes
-#include "assignmentnode.h"
 
 void Visitor::visit(ProgramNode *node) {
     std::cout << "Program" << std::endl;

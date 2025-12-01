@@ -1,6 +1,6 @@
 #include "arrayaccessnode.h"
-#include "visitor.h"
-#include "expnode.h"
+#include "../visitor.h"
+#include "../base/expnode.h"
 
 ArrayAccessNode::ArrayAccessNode(int line, 
                                  const std::string& name, 

@@ -1,19 +1,25 @@
 #ifndef VISITOR_H
 #define VISITOR_H
 
-#include "programnode.h"
-#include "statementnode.h"
-#include "plusnode.h"
-#include "minusnode.h"
-#include "multnode.h"
-#include "divnode.h"
-#include "integernode.h"
-#include "floatnode.h"
-#include "identifiernode.h"
-#include "assignmentnode.h"
-#include "arraydefnode.h"
-#include "arrayaccessnode.h"
-#include "arrayassignnode.h"
+#include <iostream>
+
+#include "base/programnode.h"
+#include "base/statementnode.h"
+
+#include "arithmetic/plusnode.h"
+#include "arithmetic/minusnode.h"
+#include "arithmetic/multnode.h"
+#include "arithmetic/divnode.h"
+
+#include "types/integernode.h"
+#include "types/floatnode.h"
+
+#include "memory/identifiernode.h"
+#include "memory/assignmentnode.h"
+
+#include "memory/arraydefnode.h"
+#include "memory/arrayaccessnode.h"
+#include "memory/arrayassignnode.h"
 
 class Visitor {
 public:

@@ -1,7 +1,7 @@
 #ifndef FLOAT_NODE_H
 #define FLOAT_NODE_H
 
-#include "expnode.h"
+#include "../base/expnode.h"
 
 class FloatNode: public ExpNode {
 public:
