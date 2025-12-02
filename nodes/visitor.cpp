@@ -91,3 +91,36 @@ void Visitor::visit(ArrayAssignNode *node) {
     node->getValueExpression()->accept(*this);
     std::cout << std::endl;
 }
+
+// --- Corrected ComparisonNode Visitor ---
+void Visitor::visit(ComparisonNode *node) {
+    std::cout << "(";
+    node->getLeft()->accept(*this);
+    
+    // Print the actual comparison symbol
+    std::cout << " " << node->getOp() << " "; 
+    
+    node->getRight()->accept(*this);
+    std::cout << ")";
+}
+
+// --- Corrected IfNode Visitor ---
+void Visitor::visit(IfNode *node) {
+    std::cout << "IF (";
+    
+    // 1. Print the condition expression
+    node->getCondition()->accept(*this);
+    
+    std::cout << ") {" << std::endl;
+    
+    // 2. Iterate over and print all statements in the true block
+    const std::vector<StatementNode*>* trueBlock = node->getTrueBlock();
+    for (StatementNode *stmt : *trueBlock) {
+        // Add indentation for readability
+        std::cout << "    "; 
+        stmt->accept(*this);
+        std::cout << ";" << std::endl; 
+    }
+    
+    std::cout << "}" << std::endl;
+}

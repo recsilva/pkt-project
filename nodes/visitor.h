@@ -23,6 +23,9 @@
 #include "memory/arrayaccessnode.h"
 #include "memory/arrayassignnode.h"
 
+#include "comparisonnode.h"
+#include "ifnode.h"
+
 class Visitor {
 public:
     virtual void visit(ProgramNode *node);
@@ -40,6 +43,8 @@ public:
     virtual void visit(ArrayDefNode *node);
     virtual void visit(ArrayAccessNode *node);
     virtual void visit(ArrayAssignNode *node);
+    virtual void visit(ComparisonNode *node);
+    virtual void visit(IfNode *node);
 };
 
 #endif

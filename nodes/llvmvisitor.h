@@ -36,6 +36,9 @@ public:
     void visit(ArrayAccessNode *node);
     void visit(ArrayAssignNode *node);
 
+    void visit(ComparisonNode *node);
+    void visit(IfNode *node);
+
 private:
     llvm::raw_fd_ostream &out;
     llvm::LLVMContext &context;
