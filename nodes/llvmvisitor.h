@@ -24,6 +24,7 @@ public:
     void visit(FloatNode *node);
 
     void visit(PlusNode *node);
+    void visit(UMinusNode *node);
     void visit(MinusNode *node);
     void visit(MultNode *node);
     void visit(DivNode *node);

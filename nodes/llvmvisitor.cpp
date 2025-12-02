@@ -409,6 +409,18 @@ void LLVMVisitor::visit(PlusNode *node) {
     }
 }
 
+void LLVMVisitor::visit(UMinusNode *node){
+    node->getExp()->accept(*this);
+    
+    if (ret->getType()->isDoubleTy()){
+        ret = builder.CreateFNeg(ret);
+    }
+    else{
+        ret = builder.CreateNeg(ret);
+    }
+    
+}
+
 void LLVMVisitor::visit(MinusNode *node) {
     node->getLeft()->accept(*this);
     llvm::Value *lhs = ret;

@@ -27,6 +27,11 @@ void Visitor::visit(PlusNode *node) {
     node->getRight()->accept(*this);
 }
 
+void Visitor::visit(UMinusNode *node){
+    node->getExp()->accept(*this);
+    std::cout << " what do we have here ?";
+}
+
 void Visitor::visit(MinusNode *node) {
     node->getLeft()->accept(*this);
     std::cout << " - ";

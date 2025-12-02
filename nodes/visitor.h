@@ -7,6 +7,7 @@
 #include "base/statementnode.h"
 
 #include "arithmetic/plusnode.h"
+#include "arithmetic/uminusnode.h"
 #include "arithmetic/minusnode.h"
 #include "arithmetic/multnode.h"
 #include "arithmetic/divnode.h"
@@ -28,6 +29,7 @@ public:
     virtual void visit(IntegerNode *node);
     virtual void visit(FloatNode *node);
     virtual void visit(PlusNode *node);
+    virtual void visit(UMinusNode *node);
     virtual void visit(MinusNode *node);
     virtual void visit(MultNode *node);
     virtual void visit(DivNode *node);
