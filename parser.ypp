@@ -25,6 +25,7 @@
   class Node *node;
   class ExpNode *expNode;
   class StatementNode *statementNode;
+  std::vector<class StatementNode*> *statementList;
 }
 
 %start program
@@ -38,19 +39,47 @@
 %token ARRAY_END       // ]
 %token PAREN_LEFT      // (
 %token PAREN_RIGHT     // )
-%token DEFINE_DEFAULT       // :
+%token BRACE_LEFT      // (
+%token BRACE_RIGHT     // )
+%token DEFINE_DEFAULT  // :
+
+%token IF
+
+//     <= >= == !=  <  >
+%token LE GE EQ NE LT GT
+
 %type <expNode> exp
 %type <statementNode> statement
+%type <statementList> block
+%type <statementList> statements
 %type <node> program
 %left   PLUS MINUS
 %left   MULT DIV
-%right  UMINUS
+%left   LE GE EQ NE LT GT  // <-- NEW PRECEDENCE LEVEL
+// %prec  UMINUS
 
 //always define most specific first, least specific last in statements
 %%
 program: { program = new ProgramNode(yylineno); }
     | program statement { assert(program); program->addStatement($2); }
     ;
+
+block: BRACE_LEFT BRACE_RIGHT { $$ = new std::vector<StatementNode*>(); }
+     | BRACE_LEFT statements BRACE_RIGHT { $$ = $2; }
+;
+
+statements: statement { 
+                // First statement creates a new vector containing itself
+                $$ = new std::vector<StatementNode*>(); 
+                $$->push_back($1); 
+            }
+    | statements statement { 
+                // Subsequent statements push onto the existing vector
+                $1->push_back($2); 
+                $$ = $1; 
+            }
+;
+
 
 statement: 
       ID ARRAY_START exp ARRAY_END DEFINE_DEFAULT exp SEMI { $$ = new ArrayDefNode(yylineno, strdup($1), $3, $6); free($1); } 
@@ -61,6 +90,9 @@ statement:
       }
     | ID ASSIGN exp SEMI { $$ = new AssignmentNode(yylineno, strdup($1), $3); free($1); }
     | exp SEMI { $$ = new StatementNode(yylineno, $1); }
+    
+    | IF PAREN_LEFT exp PAREN_RIGHT block 
+      { $$ = new IfNode(yylineno, $3, $5); }
     ;
 
 exp:
@@ -68,11 +100,21 @@ exp:
     | FLOAT_LITERAL { $$ = new FloatNode(yylineno, $1); }
     | ID            { $$ = new IdentifierNode(yylineno, strdup($1)); free($1); }
     | PAREN_LEFT exp PAREN_RIGHT { $$ = $2; }
+    
+    
+    
     | MINUS exp { $$ = new UMinusNode(yylineno, $2); }
     | exp PLUS exp  { $$ = new PlusNode(yylineno, $1, $3); }
     | exp MINUS exp { $$ = new MinusNode(yylineno, $1, $3); }
     | exp MULT exp  { $$ = new MultNode(yylineno, $1, $3); }
     | exp DIV exp   { $$ = new DivNode(yylineno, $1, $3); }
     | ID ARRAY_START exp ARRAY_END { $$ = new ArrayAccessNode(yylineno, strdup($1), $3); free($1); }
+    
+    | exp LT exp  { $$ = new ComparisonNode(yylineno, $1, $3, ComparisonNode::OpType::LT); }
+    | exp GT exp  { $$ = new ComparisonNode(yylineno, $1, $3, ComparisonNode::OpType::GT); }
+    | exp LE exp  { $$ = new ComparisonNode(yylineno, $1, $3, ComparisonNode::OpType::LE); }
+    | exp GE exp  { $$ = new ComparisonNode(yylineno, $1, $3, ComparisonNode::OpType::GE); }
+    | exp EQ exp  { $$ = new ComparisonNode(yylineno, $1, $3, ComparisonNode::OpType::EQ); }
+    | exp NE exp  { $$ = new ComparisonNode(yylineno, $1, $3, ComparisonNode::OpType::NE); }
     
     ;

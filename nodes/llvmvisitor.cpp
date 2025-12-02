@@ -97,6 +97,102 @@ void LLVMVisitor::visit(StatementNode *node) {
     floatInst = false;
 }
 
+void LLVMVisitor::visit(IfNode *node) {
+    // 1. Evaluate Condition
+    node->getCondition()->accept(*this);
+    llvm::Value *conditionValue = ret;
+
+    if (!conditionValue->getType()->isIntegerTy(1)) {
+        conditionValue = builder.CreateICmpNE(conditionValue, llvm::ConstantInt::get(conditionValue->getType(), 0), "tobool");
+    }
+
+    llvm::Function *parentFunction = builder.GetInsertBlock()->getParent();
+    
+    // 2. Create Blocks
+    llvm::BasicBlock *trueBlock = llvm::BasicBlock::Create(context, "if.true", parentFunction);
+    llvm::BasicBlock *mergeBlock = llvm::BasicBlock::Create(context, "if.merge", parentFunction);
+    
+    // 3. Branch to True/Merge
+    builder.CreateCondBr(conditionValue, trueBlock, mergeBlock);
+    
+    // 4. Generate True Block
+    builder.SetInsertPoint(trueBlock);
+    
+    for (StatementNode *stmt : *node->getTrueBlock()) {
+        stmt->accept(*this);
+    }
+
+    // *** THE FIX ***
+    // Instead of checking 'trueBlock', check the builder's CURRENT insert block.
+    // If the last statement was a nested IF, the builder is now sitting in 'inner.merge',
+    // which needs to be connected to 'outer.merge'.
+    llvm::BasicBlock *currentBlock = builder.GetInsertBlock();
+    
+    if (!currentBlock->getTerminator()) {
+        builder.CreateBr(mergeBlock);
+    }
+    
+    // 5. Continue at Merge Block
+    builder.SetInsertPoint(mergeBlock);
+    ret = nullptr;
+}
+
+void LLVMVisitor::visit(ComparisonNode *node) {
+    // 1. Evaluate LHS and RHS
+    node->getLeft()->accept(*this);
+    llvm::Value *L = ret;
+
+    node->getRight()->accept(*this);
+    llvm::Value *R = ret;
+
+    llvm::Value *L_final = L;
+    llvm::Value *R_final = R;
+
+    // 2. Check if this should be a floating point comparison
+    // If EITHER operand is a double, we must promote the other one to double.
+    bool useFloatComparison = L->getType()->isDoubleTy() || R->getType()->isDoubleTy();
+
+    if (useFloatComparison) {
+        // Ensure L is a double
+        if (!L->getType()->isDoubleTy()) {
+            L_final = builder.CreateSIToFP(L, builder.getDoubleTy(), "castL");
+        }
+        
+        // Ensure R is a double
+        if (!R->getType()->isDoubleTy()) {
+            R_final = builder.CreateSIToFP(R, builder.getDoubleTy(), "castR");
+        }
+
+        // 3a. Perform Floating Point Comparison
+        llvm::CmpInst::Predicate pred;
+        switch (node->getOp()) {
+            case ComparisonNode::OpType::LT: pred = llvm::CmpInst::FCMP_OLT; break;
+            case ComparisonNode::OpType::GT: pred = llvm::CmpInst::FCMP_OGT; break;
+            case ComparisonNode::OpType::LE: pred = llvm::CmpInst::FCMP_OLE; break;
+            case ComparisonNode::OpType::GE: pred = llvm::CmpInst::FCMP_OGE; break;
+            case ComparisonNode::OpType::EQ: pred = llvm::CmpInst::FCMP_OEQ; break;
+            case ComparisonNode::OpType::NE: pred = llvm::CmpInst::FCMP_ONE; break;
+        }
+        ret = builder.CreateFCmp(pred, L_final, R_final, "cmpF");
+
+    } else {
+        // 3b. Perform Integer Comparison (Both are i32)
+        llvm::CmpInst::Predicate pred;
+        switch (node->getOp()) {
+            case ComparisonNode::OpType::LT: pred = llvm::CmpInst::ICMP_SLT; break;
+            case ComparisonNode::OpType::GT: pred = llvm::CmpInst::ICMP_SGT; break;
+            case ComparisonNode::OpType::LE: pred = llvm::CmpInst::ICMP_SLE; break;
+            case ComparisonNode::OpType::GE: pred = llvm::CmpInst::ICMP_SGE; break;
+            case ComparisonNode::OpType::EQ: pred = llvm::CmpInst::ICMP_EQ; break;
+            case ComparisonNode::OpType::NE: pred = llvm::CmpInst::ICMP_NE; break;
+        }
+        ret = builder.CreateICmp(pred, L_final, R_final, "cmpI");
+    }
+    
+    // Result is always i1 (boolean), so future operations shouldn't treat it as float
+    floatInst = false;
+}
+
 void LLVMVisitor::visit(AssignmentNode *node) {
     // Evaluate the expression on the right-hand side (RHS)
     node->getExp()->accept(*this);
