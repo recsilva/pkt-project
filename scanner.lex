@@ -9,6 +9,7 @@
 [a-zA-Z][a-zA-Z0-9_]* { yylval.idName = strdup(yytext); return ID; }
 [0-9]+\.[0-9]+ { yylval.floatVal = atof(yytext); return FLOAT_LITERAL; }
 [0-9]+        { yylval.intVal = atoi(yytext); return INTEGER_LITERAL; }
+"'"[^\n\'\\]"'" { yylval.intVal = yytext[1]; return CHAR_LITERAL ;}
 "+"           { return PLUS; }
 "-"           { return MINUS; }
 "*"           { return MULT; }

@@ -22,6 +22,7 @@ public:
     
     void visit(IntegerNode *node);
     void visit(FloatNode *node);
+    void visit(CharNode *node);
 
     void visit(PlusNode *node);
     void visit(UMinusNode *node);

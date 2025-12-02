@@ -31,6 +31,7 @@
 
 %token <intVal> INTEGER_LITERAL
 %token <floatVal> FLOAT_LITERAL
+%token <intVal> CHAR_LITERAL
 %token <idName> ID
 %token SEMI
 %token ASSIGN
@@ -66,9 +67,10 @@ statement:
 exp:
    INTEGER_LITERAL  { $$ = new IntegerNode(yylineno, $1); }
     | FLOAT_LITERAL { $$ = new FloatNode(yylineno, $1); }
+    | CHAR_LITERAL { $$ = new CharNode(yylineno, $1); }
     | ID            { $$ = new IdentifierNode(yylineno, strdup($1)); free($1); }
     | PAREN_LEFT exp PAREN_RIGHT { $$ = $2; }
-    | MINUS exp { $$ = new UMinusNode(yylineno, $2); }
+    | MINUS exp %prec UMINUS{ $$ = new UMinusNode(yylineno, $2); }
     | exp PLUS exp  { $$ = new PlusNode(yylineno, $1, $3); }
     | exp MINUS exp { $$ = new MinusNode(yylineno, $1, $3); }
     | exp MULT exp  { $$ = new MultNode(yylineno, $1, $3); }

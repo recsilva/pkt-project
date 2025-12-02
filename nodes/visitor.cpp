@@ -21,6 +21,10 @@ void Visitor::visit(FloatNode *node) {
     std::cout << node->getValue();
 }
 
+void Visitor::visit(CharNode *node){
+    std::cout << node->getValue();
+}
+
 void Visitor::visit(PlusNode *node) {
     node->getLeft()->accept(*this);
     std::cout << " + ";

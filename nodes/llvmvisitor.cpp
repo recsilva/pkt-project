@@ -85,8 +85,14 @@ void LLVMVisitor::visit(StatementNode *node) {
             // If it was a float/double, cast it back to int for %d printing (truncation)
             printVal = builder.CreateFPToSI(printVal, builder.getInt32Ty());
         }
-        // If it's already an i32, no change.
-        formatStr = builder.CreateGlobalStringPtr("%d\n");
+        else if(printVal->getType()->isIntegerTy(8)){
+            formatStr = builder.CreateGlobalStringPtr("%c\n");
+
+        }
+        else{
+            // If it's already an i32, no change.
+            formatStr = builder.CreateGlobalStringPtr("%d\n");
+        }        
     }
 
     printArgs.push_back(formatStr);
@@ -374,11 +380,18 @@ void LLVMVisitor::visit(IntegerNode *node) {
     ret = llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(context), node->getValue());
 }
 
+
+
 void LLVMVisitor::visit(FloatNode *node) {
     // Return the LLVM float value.
     ret = llvm::ConstantFP::get(llvm::Type::getDoubleTy(context), node->getValue());
     // Mark that we're now dealing with a float.
     floatInst = true;
+}
+
+void LLVMVisitor::visit(CharNode *node){
+    ret = llvm::ConstantInt::get(llvm::Type::getInt8Ty(context), node->getValue());
+    std::cout << "||||||||||||||||||||||LLVMvisitor.cpp here|||||||||||||||||||||||||||||||||" << ret << " something " << node->getValue() << std::endl;
 }
 
 void LLVMVisitor::visit(PlusNode *node) {
