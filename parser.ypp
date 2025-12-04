@@ -29,7 +29,7 @@
   std::vector<class StatementNode*> *statementList;
   class ParamDefNode *paramDefNode;
   std::vector<class ParamDefNode*> *paramList;
-  
+
   std::vector<class ExpNode*> *argList;
 }
 
@@ -37,7 +37,9 @@
 
 %token <intVal> INTEGER_LITERAL
 %token <floatVal> FLOAT_LITERAL
+%token <intVal> CHAR_LITERAL
 %token <idName> ID
+%token <idName> STRING_LITERAL
 %token SEMI
 %token COMMA
 %token ASSIGN
@@ -48,6 +50,9 @@
 %token BRACE_LEFT      // {
 %token BRACE_RIGHT     // }
 %token DEFINE_DEFAULT  // :
+
+%token PRINT
+%token OPEN READ WRITE CLOSE
 
 %token IF
 %token WHILE
@@ -87,11 +92,13 @@ statements: statement {
                 // First statement creates a new vector containing itself
                 $$ = new std::vector<StatementNode*>(); 
                 $$->push_back($1); 
+                  std::cout << "STATEMENT 1st part" <<  std::endl;
             }
     | statements statement { 
                 // Subsequent statements push onto the existing vector
                 $1->push_back($2); 
                 $$ = $1; 
+                  std::cout << "STATENENT 2nd part" <<  std::endl;
             }
 ;
 
@@ -159,11 +166,20 @@ statement:
 
     | ID ASSIGN exp SEMI { $$ = new AssignmentNode(yylineno, strdup($1), $3); free($1); }
     | exp SEMI { $$ = new StatementNode(yylineno, $1); }
+    
+    | PRINT PAREN_LEFT exp PAREN_RIGHT SEMI { $$ = new PrintNode(yylineno,$3);  std::cout << "PRINT" <<  std::endl;}
     ;
 
 exp:
-   INTEGER_LITERAL  { $$ = new IntegerNode(yylineno, $1); }
+    OPEN PAREN_LEFT exp COMMA exp COMMA exp PAREN_RIGHT { $$ = new OpenNode(yylineno,$3,$5,$7);  std::cout << "OPEN" << std::endl;}
+    | READ PAREN_LEFT exp COMMA exp COMMA exp PAREN_RIGHT { $$ = new ReadNode(yylineno,$3,$5,$7);  std::cout << "READ" << std::endl;}
+    | WRITE PAREN_LEFT exp COMMA exp COMMA exp PAREN_RIGHT { $$ = new WriteNode(yylineno,$3,$5,$7);  std::cout << "WRITE" << std::endl;}
+    | CLOSE PAREN_LEFT exp PAREN_RIGHT { $$ = new CloseNode(yylineno,$3);  std::cout << "CLOSE" << std::endl;}
+
+    | INTEGER_LITERAL  { $$ = new IntegerNode(yylineno, $1);}
     | FLOAT_LITERAL { $$ = new FloatNode(yylineno, $1); }
+    | CHAR_LITERAL  { $$ = new CharNode(yylineno, $1);}
+    | STRING_LITERAL{ $$ = new StringNode(yylineno, strdup($1)); free($1);}
     | ID            { $$ = new IdentifierNode(yylineno, strdup($1)); free($1); }
     | PAREN_LEFT exp PAREN_RIGHT { $$ = $2; }
     
@@ -182,5 +198,4 @@ exp:
     | exp GE exp  { $$ = new ComparisonNode(yylineno, $1, $3, ComparisonNode::OpType::GE); }
     | exp EQ exp  { $$ = new ComparisonNode(yylineno, $1, $3, ComparisonNode::OpType::EQ); }
     | exp NE exp  { $$ = new ComparisonNode(yylineno, $1, $3, ComparisonNode::OpType::NE); }
-    
     ;

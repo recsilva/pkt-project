@@ -23,6 +23,8 @@ public:
     
     void visit(IntegerNode *node);
     void visit(FloatNode *node);
+    void visit(CharNode *node);
+    void visit(StringNode *node);
 
     void visit(PlusNode *node);
     void visit(UMinusNode *node);
@@ -42,6 +44,13 @@ public:
 
     void visit(FunctionDefNode *node); 
     void visit(FunctionCallNode *node);
+
+    void visit(OpenNode *node);
+    void visit(ReadNode *node);
+    void visit(WriteNode *node);
+    void visit(CloseNode *node);
+
+    void visit(PrintNode *node);
 
 private:
     llvm::raw_fd_ostream &out;
@@ -65,6 +74,8 @@ private:
                                              llvm::Type *type);
     // Helper: Searches for the correct function overload based on argument types
     llvm::Function* getFunctionOverload(const std::string& name, const std::vector<llvm::Type*>& argTypes);
+
+    void declareSystemFunctions();
 };
 
 #endif

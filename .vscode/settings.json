@@ -94,6 +94,7 @@
         "unordered_set": "cpp",
         "source_location": "cpp",
         "cfenv": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "print": "cpp"
     }
 }

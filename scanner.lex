@@ -6,13 +6,21 @@
 %option yylineno
 
 %%
+"open"        { return OPEN; }
+"read"        { return READ; }
+"write"        { return WRITE; }
+"close"        { return CLOSE; }
+"print"        { return PRINT; }
+
 "if"          { return IF; }
 "while"       { return WHILE; }
 "def"         { return DEFINE; }
 
 [a-zA-Z][a-zA-Z0-9_]* { yylval.idName = strdup(yytext); return ID; }
 [0-9]+\.[0-9]+ { yylval.floatVal = atof(yytext); return FLOAT_LITERAL; }
-[0-9]+        { yylval.intVal = atoi(yytext); return INTEGER_LITERAL; }
+[0-9]+        { yylval.intVal = atoi(yytext); return INTEGER_LITERAL;}
+"'"[^\n\'\\]"'" { yylval.intVal = yytext[1]; return CHAR_LITERAL; }
+\"[^\n"]*\"   { int content_length = yyleng -2; char *content = (char*)malloc(content_length + 1); strncpy(content,yytext+1,content_length); content[content_length]= '\0'; yylval.idName = content; return STRING_LITERAL; }
 "+"           { return PLUS; }
 "-"           { return MINUS; }
 "*"           { return MULT; }
