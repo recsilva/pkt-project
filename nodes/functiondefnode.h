@@ -1,0 +1,29 @@
+#ifndef FUNCTIONDEFNODE_H
+#define FUNCTIONDEFNODE_H
+
+#include "base/statementnode.h"
+#include "paramdefnode.h"
+#include <vector>
+#include <string>
+
+class FunctionDefNode : public StatementNode {
+public:
+    FunctionDefNode(int line, 
+                    char *id, 
+                    std::vector<ParamDefNode*> *params, // CHANGED TYPE
+                    std::vector<StatementNode*> *body);
+    ~FunctionDefNode();
+
+    const std::string& getName() const { return name; }
+    const std::vector<ParamDefNode*>* getParams() const { return params; } // CHANGED TYPE
+    const std::vector<StatementNode*>* getBody() const { return body; }
+
+    void accept(class Visitor &v) override;
+
+private:
+    std::string name;
+    std::vector<ParamDefNode*> *params; // CHANGED TYPE
+    std::vector<StatementNode*> *body;
+};
+
+#endif

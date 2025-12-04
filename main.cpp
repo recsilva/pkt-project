@@ -24,7 +24,9 @@ int main(int argc, char **argv) {
     std::unique_ptr<llvm::Module> mod;
     mod = std::make_unique<llvm::Module>("ECTLang module", context);
 
+    printf("parsing\n");
     yyparse();
+    mod->setTargetTriple(llvm::Triple("x86_64-pc-linux-gnu"));   
     llvm::StringRef filename = "temp.ll";
     std::error_code ec;
     llvm::raw_fd_ostream out(filename, ec);

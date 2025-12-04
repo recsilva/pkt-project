@@ -9,6 +9,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/IR/Function.h"
 
 #include "visitor.h"
 
@@ -37,6 +38,10 @@ public:
 
     void visit(ComparisonNode *node);
     void visit(IfNode *node);
+    void visit(WhileNode *node);
+
+    void visit(FunctionDefNode *node); 
+    void visit(FunctionCallNode *node);
 
 private:
     llvm::raw_fd_ostream &out;
@@ -44,8 +49,11 @@ private:
     std::unique_ptr<llvm::Module> &mod;
     llvm::IRBuilder<> builder;
 
+    // GLOBAL FUNCTION TABLE for Overloading: Maps function name to a list of signatures
+    std::map<std::string, std::vector<llvm::Function*>> functionTable;
+
     // Symbol table mapping variable name to its memory allocation (AllocaInst*)
-    std::map<std::string, llvm::AllocaInst *> symbolTable; // <-- NEW
+    std::map<std::string, llvm::AllocaInst *> symbolTable;
 
     // The "return value" from the previous visit method.
     llvm::Value *ret;
@@ -54,7 +62,9 @@ private:
     // Helper function to create stack allocation in the entry block
     llvm::AllocaInst *createEntryBlockAlloca(llvm::Function *function,
                                              const std::string &varName,
-                                             llvm::Type *type); // <-- NEW
+                                             llvm::Type *type);
+    // Helper: Searches for the correct function overload based on argument types
+    llvm::Function* getFunctionOverload(const std::string& name, const std::vector<llvm::Type*>& argTypes);
 };
 
 #endif

@@ -24,6 +24,11 @@
 
 #include "comparisonnode.h"
 #include "ifnode.h"
+#include "whilenode.h"
+
+#include "paramdefnode.h"
+#include "functiondefnode.h"
+#include "functioncallnode.h"
 
 class Visitor {
 public:
@@ -43,6 +48,9 @@ public:
     virtual void visit(ArrayAssignNode *node);
     virtual void visit(ComparisonNode *node);
     virtual void visit(IfNode *node);
+    virtual void visit(WhileNode *node);
+    virtual void visit(FunctionDefNode *node);
+    virtual void visit(FunctionCallNode *node);
 };
 
 #endif

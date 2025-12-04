@@ -12,7 +12,9 @@ run: $(PROG)
 ifeq ($(OS),Windows_NT)
 	-@.\$(PROG)
 else
-	@./$(PROG) || true
+	@echo ./$(PROG)
+	@./$(PROG)
+	@echo exit
 endif
 
 $(PROG): temp.ll
@@ -33,8 +35,8 @@ nlc: main.cpp parser.tab.cpp $(DIRS)
 ifeq ($(OS),Windows_NT)
 	powershell.exe -Command "g++ $^ $(LLVM) -o nlc.exe"
 else
-#nlc: main.cpp parser.tab.cpp nodes/*.cpp
-	g++ $^ $(LLVM) -o $@
+	@echo "g++ ... -o $@"
+	@g++ $^ $(LLVM) -o $@
 endif
 
 parser.tab.cpp: parser.ypp scanner.c
@@ -51,50 +53,6 @@ else
 	flex -o $@ $^
 endif
 
-# 
-
-# 	CHILDREN := (Get-ChildItem nodes\*.cpp)
-
-# 	run: $(PROG)
-# 		.\$(PROG)
-
-# 	$(PROG): temp.ll
-# 		clang++ -o $(PROG) .\temp.ll
-
-# 	temp.ll: src.nl nlc.exe
-# 		type src.nl | .\nlc.exe
-
-# 	nlc.exe: main.cpp parser.tab.cpp nodes/*.cpp
-# 		g++ parser.tab.cpp  main.cpp $(CHILDREN) $(LLVM) -o nlc.exe
-
-# 	parser.tab.cpp: parser.ypp scanner.c
-# 		win_bison -d parser.ypp
-
-# 	scanner.c: scanner.lex
-# 		win_flex -o scanner.c scanner.lex
-
-# else
-# 	run: $(PROG)
-# 		@./$(PROG) || true
-
-# 	build: $(PROG)
-
-# 	$(PROG): temp.ll
-# 		clang++ $^ -o $@
-
-# 	temp.ll: nlc src.nl
-# 		./nlc < src.nl
-
-# 	nlc: main.cpp parser.tab.cpp nodes/*.cpp
-# 		g++ $^ $(LLVM) -o $@
-
-# 	parser.tab.cpp : parser.ypp scanner.c
-# 		bison -d parser.ypp
-
-# 	scanner.c : scanner.lex
-# 		flex -o $@ $^
-
-# endif
 
 clean:
 	$(RM) scanner.c parser.tab.* nlc temp.ll $(PROG) *.exe

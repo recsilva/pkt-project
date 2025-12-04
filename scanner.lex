@@ -7,6 +7,8 @@
 
 %%
 "if"          { return IF; }
+"while"       { return WHILE; }
+"def"         { return DEFINE; }
 
 [a-zA-Z][a-zA-Z0-9_]* { yylval.idName = strdup(yytext); return ID; }
 [0-9]+\.[0-9]+ { yylval.floatVal = atof(yytext); return FLOAT_LITERAL; }
@@ -17,6 +19,7 @@
 "/"           { return DIV; }
 "="           { return ASSIGN; }
 ";"           { return SEMI; }
+","           { return COMMA; }
 
 "["           { return ARRAY_START; }
 "]"           { return ARRAY_END; }

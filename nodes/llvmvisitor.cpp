@@ -1,5 +1,7 @@
 #include "llvmvisitor.h"
 
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 // Helper function to create a stack allocation in the entry block of a function
 llvm::AllocaInst *LLVMVisitor::createEntryBlockAlloca(llvm::Function *function,
                                              const std::string &varName,
@@ -22,8 +24,7 @@ LLVMVisitor::LLVMVisitor(llvm::raw_fd_ostream &out,
 void LLVMVisitor::visit(ProgramNode *node) {
     // Function returns void.
     llvm::FunctionType *functionReturnType =
-        llvm::FunctionType::get(llvm::Type::getVoidTy(context), false);
-
+        llvm::FunctionType::get(builder.getInt32Ty(), false);
     // Our main function.
     llvm::Function *mainFunction =
         llvm::Function::Create(functionReturnType,
@@ -53,10 +54,14 @@ void LLVMVisitor::visit(ProgramNode *node) {
 
     // Visit all of the statements.
     for (auto statement : node->getStatements())
+    {
+        // printf("statement at: %i\n", statement->getLine());
         statement->accept(*this);
+    }
 
     // Return
-    builder.CreateRetVoid();
+    llvm::Value *zero = llvm::ConstantInt::get(builder.getInt32Ty(), 0);
+    builder.CreateRet(zero);
 
     // Print to the file!
     mod->print(out, nullptr);
@@ -73,6 +78,7 @@ void LLVMVisitor::visit(StatementNode *node) {
     llvm::Value *formatStr;
     llvm::Value *printVal = ret;
 
+    if (!ret){return;}
     if (floatInst) {
         // Ensure the value is a double for printing
         if (!printVal->getType()->isDoubleTy())
@@ -191,6 +197,238 @@ void LLVMVisitor::visit(ComparisonNode *node) {
     
     // Result is always i1 (boolean), so future operations shouldn't treat it as float
     floatInst = false;
+}
+
+// Helper function to search for the best function overload
+llvm::Function* LLVMVisitor::getFunctionOverload(const std::string& name, const std::vector<llvm::Type*>& argTypes) {
+    auto it = functionTable.find(name);
+    if (it == functionTable.end()) {
+        return nullptr;
+    }
+
+    for (llvm::Function* F : it->second) {
+        if (F->arg_size() != argTypes.size()) {
+            continue; 
+        }
+
+        bool match = true;
+        unsigned i = 0;
+        for (auto &Arg : F->args()) {
+            llvm::Type* paramType = Arg.getType();
+            llvm::Type* argType = argTypes[i];
+
+            // For simplicity, we check for exact match OR int->float coercion possibility
+            if (paramType != argType) {
+                if (!(paramType->isFloatingPointTy() && argType->isIntegerTy())) {
+                    match = false;
+                    break;
+                }
+            }
+            i++;
+        }
+
+        if (match) {
+            return F; // Found a matching overload
+        }
+    }
+    return nullptr; // No matching overload found
+}
+
+
+// --- Function Definition ---
+void LLVMVisitor::visit(FunctionDefNode *node) {
+    // printf("FUNCTION DEFINITION, line no: %i\n", node->getLine());
+    // std::cout << "     NAME: " << node->getName() << std::endl;
+
+    // Save current state (required for nesting functions and statements)
+    llvm::BasicBlock *oldBlock = builder.GetInsertBlock();
+    auto outerSymbolTable = symbolTable;
+    symbolTable.clear(); // Initialize fresh symbol table for new function scope
+
+    // 1. Determine function signature (We assume 'float' return type for simplicity)
+    llvm::Type *retType = builder.getFloatTy();
+    std::vector<llvm::Type*> paramTypes;
+    
+
+    // Determine parameter types based on default values
+    for (ParamDefNode *paramDef : *node->getParams()) {
+        llvm::Type *inferredType = builder.getFloatTy(); // Default assumption (float)
+
+        if (paramDef->getDefaultValue()) {
+            // Temporarily evaluate the default expression *without* side effects
+            // This is complex in a real compiler, here we'll simulate type inference:
+            
+            // A clean way would be to create a temporary visitor to evaluate 
+            // the default expression and observe its type. Since we can't easily 
+            // spin up a new visitor, we'll run the expression and check its type 
+            // before generating the function.
+
+            // HACK: Re-run the expression visitor temporarily to see the type
+            // This requires careful state management to avoid polluting `ret`.
+            
+            llvm::Value *tempRet = nullptr;
+            bool tempFloatInst = false;
+            
+            // Save global state
+            llvm::Value *originalRet = ret;
+            bool originalFloatInst = floatInst;
+
+            paramDef->getDefaultValue()->accept(*this);
+            tempRet = ret;
+            tempFloatInst = floatInst;
+
+            // Restore global state
+            ret = originalRet;
+            floatInst = originalFloatInst;
+            builder.SetInsertPoint(oldBlock); // Restore builder position too
+
+            if (tempRet) {
+                inferredType = tempRet->getType();
+            }
+        }
+        
+        paramTypes.push_back(inferredType); 
+    }
+    
+    llvm::FunctionType *funcType = llvm::FunctionType::get(retType, paramTypes, false);
+    
+    // 2. Create the LLVM Function and register it
+    llvm::Function *F = llvm::Function::Create(
+        funcType, llvm::Function::ExternalLinkage, node->getName(), mod.get());
+    
+    functionTable[node->getName()].push_back(F);
+    
+    // 3. Set up parameters and entry block
+    llvm::BasicBlock *entryBlock = llvm::BasicBlock::Create(context, "entry", F);
+    builder.SetInsertPoint(entryBlock);
+
+    auto paramIt = F->arg_begin();
+    auto paramDefIt = node->getParams()->begin();
+
+    for (; paramIt != F->arg_end(); ++paramIt, ++paramDefIt) {
+        ParamDefNode *paramDef = *paramDefIt;
+        const std::string& paramName = paramDef->getName();
+        paramIt->setName(paramName);
+        
+        // Allocate stack space and store the passed argument (making it a local variable)
+        llvm::AllocaInst *Alloca = createEntryBlockAlloca(F, paramName, paramIt->getType());
+        builder.CreateStore(paramIt, Alloca);
+        symbolTable[paramName] = Alloca;
+    }
+
+    // 4. Visit the function body
+    for (StatementNode *stmt : *node->getBody()) {
+        stmt->accept(*this);
+    }
+    
+    // 5. Ensure function is terminated
+    if (!builder.GetInsertBlock()->getTerminator()) {
+        builder.CreateRet(llvm::ConstantFP::get(context, llvm::APFloat(0.0f)));
+    }
+
+    // 6. Restore previous context
+    symbolTable = outerSymbolTable;
+    if (oldBlock) {
+        builder.SetInsertPoint(oldBlock);
+    }
+    ret = nullptr; 
+}
+
+// --- Function Call ---
+void LLVMVisitor::visit(FunctionCallNode *node) {
+    // printf("FUNCTION INVOCATION, line no: %i\n", node->getLine());
+    // std::cout << "     NAME: " << node->getName() << std::endl;
+
+    std::vector<llvm::Value*> argValues;
+    std::vector<llvm::Type*> argTypes;
+
+    // 1. Evaluate all arguments and collect types
+    for (ExpNode *arg : *node->getArgs()) {
+        arg->accept(*this);
+        argValues.push_back(ret);
+        argTypes.push_back(ret->getType());
+    }
+
+    // 2. Resolve Overload
+    llvm::Function *F = getFunctionOverload(node->getName(), argTypes);
+
+    if (!F) {
+        std::cerr << "Error (Line " << node->getLine() << "): No matching function overload found for '" << node->getName() << "'." << std::endl;
+        ret = llvm::ConstantFP::get(context, llvm::APFloat(0.0f)); 
+        floatInst = true;
+        return;
+    }
+
+    // 3. Generate the Call Instruction with necessary coercion
+    std::vector<llvm::Value*> finalArgs;
+    auto paramIt = F->arg_begin();
+
+    for (size_t i = 0; i < argValues.size(); ++i) {
+        llvm::Value* argVal = argValues[i];
+        llvm::Type* paramType = paramIt->getType();
+        
+        if (argVal->getType() != paramType) {
+            // Coerce integer arguments to float parameters
+            if (argVal->getType()->isIntegerTy() && paramType->isFloatingPointTy()) {
+                argVal = builder.CreateSIToFP(argVal, paramType, "castToFloat");
+            } 
+        }
+        finalArgs.push_back(argVal);
+        paramIt++;
+    }
+
+    ret = builder.CreateCall(F, finalArgs, "calltmp");
+    floatInst = ret->getType()->isFloatingPointTy();
+    ret = nullptr; 
+}
+
+void LLVMVisitor::visit(WhileNode *node) {
+    llvm::Function *parentFunction = builder.GetInsertBlock()->getParent();
+
+    // 1. Create the three core blocks
+    llvm::BasicBlock *loopCondBlock = llvm::BasicBlock::Create(context, "loop.cond", parentFunction);
+    llvm::BasicBlock *loopBodyBlock = llvm::BasicBlock::Create(context, "loop.body", parentFunction);
+    llvm::BasicBlock *loopAfterBlock = llvm::BasicBlock::Create(context, "loop.after", parentFunction);
+    
+    // 2. Terminate the block immediately preceding the loop (jump to condition)
+    builder.CreateBr(loopCondBlock);
+    
+    // 3. Emit the Loop Condition Block
+    builder.SetInsertPoint(loopCondBlock);
+    
+    // Evaluate the condition expression
+    node->getCondition()->accept(*this);
+    llvm::Value *conditionValue = ret;
+
+    // Coerce the condition result to i1 (boolean) if necessary
+    if (!conditionValue->getType()->isIntegerTy(1)) {
+        conditionValue = builder.CreateICmpNE(conditionValue, 
+                                             llvm::ConstantInt::get(conditionValue->getType(), 0), 
+                                             "tobool.loop");
+    }
+    
+    // Branch based on condition: to body if true, to after if false
+    builder.CreateCondBr(conditionValue, loopBodyBlock, loopAfterBlock);
+
+    // 4. Emit the Loop Body Block
+    builder.SetInsertPoint(loopBodyBlock);
+
+    // Generate code for all statements in the loop body
+    for (StatementNode *stmt : *node->getLoopBody()) {
+        stmt->accept(*this);
+    }
+    
+    // CRITICAL: Ensure the body block loops back to the condition!
+    // Check if the loop body already contains a terminator (e.g., a nested if/return)
+    llvm::BasicBlock *currentBlock = builder.GetInsertBlock();
+    if (!currentBlock->getTerminator()) {
+        builder.CreateBr(loopCondBlock);
+    }
+
+    // 5. Emit the After Block
+    // The rest of the program continues from here
+    builder.SetInsertPoint(loopAfterBlock);
+    ret = nullptr; 
 }
 
 void LLVMVisitor::visit(AssignmentNode *node) {

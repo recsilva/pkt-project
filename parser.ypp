@@ -1,6 +1,7 @@
 %{
     #include <assert.h>
     #include <iostream>
+    #include <stdio.h>
 
     #include "nodes/visitor.h" // includes all nodes 
     //             (might change later, this is kind of a hack)
@@ -26,6 +27,10 @@
   class ExpNode *expNode;
   class StatementNode *statementNode;
   std::vector<class StatementNode*> *statementList;
+  class ParamDefNode *paramDefNode;
+  std::vector<class ParamDefNode*> *paramList;
+  
+  std::vector<class ExpNode*> *argList;
 }
 
 %start program
@@ -34,16 +39,19 @@
 %token <floatVal> FLOAT_LITERAL
 %token <idName> ID
 %token SEMI
+%token COMMA
 %token ASSIGN
 %token ARRAY_START     // [
 %token ARRAY_END       // ]
 %token PAREN_LEFT      // (
 %token PAREN_RIGHT     // )
-%token BRACE_LEFT      // (
-%token BRACE_RIGHT     // )
+%token BRACE_LEFT      // {
+%token BRACE_RIGHT     // }
 %token DEFINE_DEFAULT  // :
 
 %token IF
+%token WHILE
+%token DEFINE
 
 //     <= >= == !=  <  >
 %token LE GE EQ NE LT GT
@@ -52,6 +60,13 @@
 %type <statementNode> statement
 %type <statementList> block
 %type <statementList> statements
+
+%type <statementNode> function_definition
+%type <paramList> parameters
+%type <paramDefNode> parameter
+%type <argList> arguments
+%type <expNode> function_call
+
 %type <node> program
 %left   PLUS MINUS
 %left   MULT DIV
@@ -81,18 +96,69 @@ statements: statement {
 ;
 
 
+// FUNCTION STATEMENTS
+// --- Function Definition Structure: ID(params){block} ---
+function_definition: 
+      DEFINE ID PAREN_LEFT PAREN_RIGHT block
+      { $$ = new FunctionDefNode(yylineno, strdup($2), new std::vector<ParamDefNode*>(), $5); free($2);} // No params
+    | DEFINE ID PAREN_LEFT parameters PAREN_RIGHT block
+      { $$ = new FunctionDefNode(yylineno, strdup($2), $4, $6); free($2);} // With params
+;
+
+// --- Parameter List (List of 'parameter' non-terminals) ---
+parameters: parameter { 
+                $$ = new std::vector<ParamDefNode*>(); 
+                $$->push_back($1); 
+            }
+    | parameters COMMA parameter { 
+                $1->push_back($3); 
+                $$ = $1; 
+            }
+;
+
+// --- Parameter Rule: ID or ID : exp (with default value) ---
+parameter: ID { 
+                // Simple parameter: ID (no default value)
+                $$ = new ParamDefNode(yylineno, strdup($1), nullptr); 
+                free($1); 
+            }
+    | ID DEFINE_DEFAULT exp { 
+                // Parameter with default value: ID : exp
+                $$ = new ParamDefNode(yylineno, strdup($1), $3); 
+                free($1); 
+            }
+;
+
+// --- Argument List (used in function calls) ---
+arguments: exp { $$ = new std::vector<ExpNode*>(); $$->push_back($1); }
+    | arguments COMMA exp { $1->push_back($3); $$ = $1; }
+;
+
+// --- Function Call Expression: ID(args) ---
+function_call: 
+      ID PAREN_LEFT PAREN_RIGHT { $$ = new FunctionCallNode(yylineno, strdup($1), new std::vector<ExpNode*>()); free($1); } // No args
+    | ID PAREN_LEFT arguments PAREN_RIGHT { $$ = new FunctionCallNode(yylineno, strdup($1), $3); free($1); } // With args
+;
+
+
 statement: 
-      ID ARRAY_START exp ARRAY_END DEFINE_DEFAULT exp SEMI { $$ = new ArrayDefNode(yylineno, strdup($1), $3, $6); free($1); } 
+      function_definition { $$ = $1; }
+
+    | ID ARRAY_START exp ARRAY_END DEFINE_DEFAULT exp SEMI { $$ = new ArrayDefNode(yylineno, strdup($1), $3, $6); free($1); } 
     | ID ARRAY_START exp ARRAY_END ASSIGN exp SEMI 
       { 
           $$ = new ArrayAssignNode(yylineno, strdup($1), $3, $6); 
           free($1); 
       }
-    | ID ASSIGN exp SEMI { $$ = new AssignmentNode(yylineno, strdup($1), $3); free($1); }
-    | exp SEMI { $$ = new StatementNode(yylineno, $1); }
-    
+
     | IF PAREN_LEFT exp PAREN_RIGHT block 
       { $$ = new IfNode(yylineno, $3, $5); }
+
+    | WHILE PAREN_LEFT exp PAREN_RIGHT block 
+      { $$ = new WhileNode(yylineno, $3, $5); }
+
+    | ID ASSIGN exp SEMI { $$ = new AssignmentNode(yylineno, strdup($1), $3); free($1); }
+    | exp SEMI { $$ = new StatementNode(yylineno, $1); }
     ;
 
 exp:
@@ -101,7 +167,7 @@ exp:
     | ID            { $$ = new IdentifierNode(yylineno, strdup($1)); free($1); }
     | PAREN_LEFT exp PAREN_RIGHT { $$ = $2; }
     
-    
+    | function_call   { $$ = $1; }
     
     | MINUS exp { $$ = new UMinusNode(yylineno, $2); }
     | exp PLUS exp  { $$ = new PlusNode(yylineno, $1, $3); }

@@ -120,3 +120,14 @@ void Visitor::visit(IfNode *node) {
     
     std::cout << "}" << std::endl;
 }
+
+void Visitor::visit(WhileNode *node) { 
+    std::cout << "while output not implemented\n";
+}
+
+void Visitor::visit(FunctionDefNode *node){
+    std::cout << "func def output not implemented\n";
+}
+void Visitor::visit(FunctionCallNode *node){
+    std::cout << "func call output not implemented\n";
+}
