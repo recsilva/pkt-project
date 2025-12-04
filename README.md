@@ -3,4 +3,5 @@
 ### Used tools
 lexer: flex \
 parser: bison \
-compiler: llvm 
+compiler: llvm \
+love and friendship

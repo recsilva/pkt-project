@@ -1,26 +1,11 @@
-a = 5;
-b = 'z';
-c = 'a';
-a;
-b;
-c;
+fd = 0;
+file_path = "test.txt";
+read_buffer[4]:'0';
+read_length = 3;
 
-array[4]:2.1;
-array[1] = -1.2;
-array[2] = 4.4;
-array[0];
-array[1];
-array[2];
+fd = open(file_path,0,0);
+print(fd);
 
-array[3] = array[1] + array[2] + array[3];
-array[3];
+output = read(fd,read_buffer,read_length);
+print(output);
 
-if (array[3] > 1){
-
-    if (array[2] > array[1]){
-        1;
-    }
-    if (array[2] <= array[1]){
-        0;
-    }
-}

@@ -23,6 +23,7 @@ public:
     void visit(IntegerNode *node);
     void visit(FloatNode *node);
     void visit(CharNode *node);
+    void visit(StringNode *node);
 
     void visit(PlusNode *node);
     void visit(UMinusNode *node);
@@ -38,6 +39,13 @@ public:
 
     void visit(ComparisonNode *node);
     void visit(IfNode *node);
+
+    void visit(OpenNode *node);
+    void visit(ReadNode *node);
+    void visit(WriteNode *node);
+    void visit(CloseNode *node);
+
+    void visit(PrintNode *node);
 
 private:
     llvm::raw_fd_ostream &out;
@@ -56,6 +64,8 @@ private:
     llvm::AllocaInst *createEntryBlockAlloca(llvm::Function *function,
                                              const std::string &varName,
                                              llvm::Type *type); // <-- NEW
+
+    void declareSystemFunctions();
 };
 
 #endif

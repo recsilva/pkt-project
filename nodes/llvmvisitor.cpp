@@ -17,9 +17,73 @@ LLVMVisitor::LLVMVisitor(llvm::raw_fd_ostream &out,
         out(out), context(context), mod(mod), builder(context) {
     ret = nullptr;
     floatInst = false;
+
+    declareSystemFunctions();
+}
+
+void LLVMVisitor::declareSystemFunctions(){
+
+    llvm::FunctionType *strerrorType = llvm::FunctionType::get(
+        builder.getInt8Ty()->getPointerTo(),
+        {builder.getInt32Ty()},
+        false
+    );
+    llvm::Function::Create(strerrorType, llvm::Function::ExternalLinkage, "strerror",mod.get());
+
+    //printf function
+    llvm::FunctionType *printfType = llvm::FunctionType::get(
+        builder.getInt32Ty(), //return type
+        builder.getInt8Ty()->getPointerTo(),//param types
+        true //isVarArg | idk who dis
+    );
+    llvm::Function::Create(printfType, llvm::Function::ExternalLinkage, "printf",mod.get());
+
+    // std::vector<llvm::Type *> params;
+    // // Pointer to int8 would be like char *
+    // params.push_back(llvm::PointerType::get(llvm::Type::getInt8Ty(context), 0));
+
+    // llvm::FunctionType *printfType =
+    //         llvm::FunctionType::get(builder.getInt32Ty(), params, /*isVarArg=*/true);
+    // llvm::Function::Create(printfType, llvm::Function::ExternalLinkage, "printf",
+    //                    mod.get());
+
+    //open function
+    llvm::FunctionType *openType = llvm::FunctionType::get(
+        builder.getInt32Ty(),
+        {builder.getInt8Ty()->getPointerTo(),builder.getInt32Ty(),builder.getInt32Ty() },
+        false
+    );
+    llvm::Function::Create(openType, llvm::Function::ExternalLinkage, "open",mod.get());
+    
+    //read function
+    llvm::FunctionType *readType = llvm::FunctionType::get(
+        builder.getInt32Ty(),
+        {builder.getInt32Ty(),builder.getInt8Ty()->getPointerTo(),builder.getInt32Ty()},
+        false
+    );
+    llvm::Function::Create(readType, llvm::Function::ExternalLinkage, "read",mod.get());
+    
+    //write function
+    llvm::FunctionType *writeType = llvm::FunctionType::get(
+        builder.getInt32Ty(),
+        {builder.getInt32Ty(),builder.getInt8Ty()->getPointerTo(),builder.getInt32Ty() },
+        false
+    );
+    llvm::Function::Create(writeType, llvm::Function::ExternalLinkage, "write",mod.get());
+    
+    //close function
+    llvm::FunctionType *closeType = llvm::FunctionType::get(
+        builder.getInt32Ty(),
+        builder.getInt32Ty(),
+        false
+    );
+    llvm::Function::Create(closeType, llvm::Function::ExternalLinkage, "close",mod.get());
+    
+
 }
 
 void LLVMVisitor::visit(ProgramNode *node) {
+    
     // Function returns void.
     llvm::FunctionType *functionReturnType =
         llvm::FunctionType::get(llvm::Type::getVoidTy(context), false);
@@ -41,15 +105,6 @@ void LLVMVisitor::visit(ProgramNode *node) {
     llvm::IRBuilder<> entryBuilder(entry);
     entryBuilder.CreateBr(body);
 
-    // Setup printf prototype.
-    std::vector<llvm::Type *> params;
-    // Pointer to int8 would be like char *
-    params.push_back(llvm::PointerType::get(llvm::Type::getInt8Ty(context), 0));
-
-    llvm::FunctionType *printfType =
-            llvm::FunctionType::get(builder.getInt32Ty(), params, /*isVarArg=*/true);
-    llvm::Function::Create(printfType, llvm::Function::ExternalLinkage, "printf",
-                       mod.get());
 
     // Visit all of the statements.
     for (auto statement : node->getStatements())
@@ -61,46 +116,61 @@ void LLVMVisitor::visit(ProgramNode *node) {
     // Print to the file!
     mod->print(out, nullptr);
     out.close();
+    
 }
 
 void LLVMVisitor::visit(StatementNode *node) {
-    node->getExp()->accept(*this);
+    
+    //IDK WHAT THE BIG MAN DO NOW, THERES A PRINT NODE, BROS LEFT WITHOUT A JOB
 
-    // Call printf with our returned value.
-    std::vector<llvm::Value *> printArgs;
+    // node->getExp()->accept(*this);
 
-    // Change the format string depending on if we're dealing with a float or not.
-    llvm::Value *formatStr;
-    llvm::Value *printVal = ret;
+    // // Call printf with our returned value.
+    // std::vector<llvm::Value *> printArgs;
 
-    if (floatInst) {
-        // Ensure the value is a double for printing
-        if (!printVal->getType()->isDoubleTy())
-            printVal = builder.CreateSIToFP(printVal, builder.getDoubleTy());
+    // // Change the format string depending on if we're dealing with a float or not.
+    // llvm::Value *formatStr;
+    // llvm::Value *printVal = ret;
+
+    // if (floatInst) {
+    //     //if float make sure its a double and change to %f
+    //     if (!printVal->getType()->isDoubleTy())
+    //         printVal = builder.CreateSIToFP(printVal, builder.getDoubleTy());
             
-        formatStr = builder.CreateGlobalStringPtr("%f\n");
-    } else {
-        // Ensure the value is an int32 for printing
-        if (printVal->getType()->isDoubleTy()) {
-            // If it was a float/double, cast it back to int for %d printing (truncation)
-            printVal = builder.CreateFPToSI(printVal, builder.getInt32Ty());
-        }
-        else if(printVal->getType()->isIntegerTy(8)){
-            formatStr = builder.CreateGlobalStringPtr("%c\n");
+    //     formatStr = builder.CreateGlobalStringPtr("%f\n");
 
-        }
-        else{
-            // If it's already an i32, no change.
-            formatStr = builder.CreateGlobalStringPtr("%d\n");
-        }        
-    }
+    //     //if its a pointer and i8 length change to %s for strings
+    // } else if (printVal->getType()->isPointerTy()){
+    //     llvm::PointerType *ptrType = llvm::dyn_cast<llvm::PointerType>(printVal->getType());
 
-    printArgs.push_back(formatStr);
-    printArgs.push_back(printVal);
-    builder.CreateCall(mod->getFunction("printf"), printArgs);
+    //     if (printVal->getType() == builder.getInt8Ty()->getPointerTo()){
+    //         formatStr = builder.CreateGlobalStringPtr("%s\n");
+    //     }
 
-    // Reset the float instruction marker.
-    floatInst = false;
+    //     //if its length of i8 change to %c for chars
+    // } else if (printVal->getType()->isIntegerTy(8)){
+    //     formatStr = builder.CreateGlobalStringPtr("%c\n");
+
+    //     //default for integers, make sure its int and change to %d
+    // } else {
+
+    //     if (printVal->getType()->isDoubleTy()){
+    //         printVal = builder.CreateFPToSI(printVal,builder.getInt32Ty());
+    //     }
+
+    //     formatStr = builder.CreateGlobalStringPtr("%d\n");
+    // }
+    
+    
+
+    // printArgs.push_back(formatStr);
+    // printArgs.push_back(printVal);
+
+    // //builder.CreateCall(mod->getFunction("magic"),printArgs);
+    // //builder.CreateCall(mod->getFunction("printf"), printArgs);
+
+    // // Reset the float instruction marker.
+    // floatInst = false;
 }
 
 void LLVMVisitor::visit(IfNode *node) {
@@ -487,7 +557,38 @@ void LLVMVisitor::visit(FloatNode *node) {
 
 void LLVMVisitor::visit(CharNode *node){
     ret = llvm::ConstantInt::get(llvm::Type::getInt8Ty(context), node->getValue());
-    std::cout << "||||||||||||||||||||||LLVMvisitor.cpp here|||||||||||||||||||||||||||||||||" << ret << " something " << node->getValue() << std::endl;
+}
+
+void LLVMVisitor::visit(StringNode *node){
+    
+    const char *str = node->getValue();
+
+    llvm::Constant *stringConst = llvm::ConstantDataArray::getString(context, str, true); 
+
+    static int globalStringCounter = 0;
+    std::string globalVarName = "__str_lit_" + std::to_string(globalStringCounter++);
+
+    llvm::GlobalVariable *globalVar = new llvm::GlobalVariable(
+        *(mod.get()),
+        stringConst->getType(),
+        true,
+        llvm::GlobalValue::PrivateLinkage,
+        stringConst,
+        globalVarName
+    );
+
+    std::vector<llvm::Constant *> indices;
+    llvm::Type *i32Ty = llvm::Type::getInt32Ty(context);
+    indices.push_back(llvm::ConstantInt::get(i32Ty,0));
+    indices.push_back(llvm::ConstantInt::get(i32Ty,0));
+
+    ret = llvm::ConstantExpr::getGetElementPtr(
+        globalVar->getValueType(),
+        globalVar,
+        indices,
+        "stringptr"
+    );
+
 }
 
 void LLVMVisitor::visit(PlusNode *node) {
@@ -610,4 +711,123 @@ void LLVMVisitor::visit(DivNode *node) {
         // Otherwise we're just doing an integer add.
         ret = builder.CreateSDiv(lhs, rhs);
     }
+}
+
+void LLVMVisitor::visit(OpenNode *node){
+    node->getPathExp()->accept(*this);
+    llvm::Value* path_val = ret;
+
+
+    node->getFlagsExp()->accept(*this);
+    llvm::Value* flags_val = ret;
+
+    node->getModeExp()->accept(*this);
+    llvm::Value* mode_val = ret;
+
+    //std::vector<llvm::Value*> args = {path_val,flags_val,mode_val};
+    std::vector<llvm::Value*> args;
+    args.push_back(path_val);
+    args.push_back(flags_val);
+    args.push_back(mode_val);
+
+    ret = builder.CreateCall(mod->getFunction("open"),args,"open_result");
+
+    
+}
+
+void LLVMVisitor::visit(ReadNode *node){
+    node->getFdExp()->accept(*this);
+    llvm::Value* fd_val = ret;
+
+    node->getBufExp()->accept(*this);
+    llvm::Value* buffer_val = ret;
+
+    node->getCountExp()->accept(*this);
+    llvm::Value* count_val = ret;
+
+    std::vector<llvm::Value*> args = {fd_val,buffer_val,count_val};
+
+    ret = builder.CreateCall(mod->getFunction("read"),args,"read_bytes");
+}
+
+void LLVMVisitor::visit(WriteNode *node){
+    node->getFdExp()->accept(*this);
+    llvm::Value* fd_val = ret;
+
+    node->getBufExp()->accept(*this);
+    llvm::Value* buffer_val = ret;
+
+    node->getCountExp()->accept(*this);
+    llvm::Value* count_val = ret;
+
+    std::vector<llvm::Value*> args = {fd_val,buffer_val,count_val};
+
+    ret = builder.CreateCall(mod->getFunction("write"),args,"write_bytes");
+}
+
+void LLVMVisitor::visit(CloseNode *node){
+    node->getFdExp()->accept(*this);
+    llvm::Value* fd_val = ret;
+
+
+    std::vector<llvm::Value*> args = {fd_val};
+
+    ret = builder.CreateCall(mod->getFunction("close"),args,"close_result");
+}
+
+void LLVMVisitor::visit(PrintNode *node){
+
+    node->getExp()->accept(*this);
+
+    // Call printf with our returned value.
+    std::vector<llvm::Value *> printArgs;
+
+    // Change the format string depending on if we're dealing with a float or not.
+    llvm::Value *formatStr;
+    llvm::Value *printVal = ret;
+
+
+    if (floatInst) {
+        //if float make sure its a double and change to %f
+        if (!printVal->getType()->isDoubleTy())
+            printVal = builder.CreateSIToFP(printVal, builder.getDoubleTy());
+            
+        formatStr = builder.CreateGlobalStringPtr("%f\n");
+
+        //if its a pointer and i8 length change to %s for strings
+    } else if (printVal->getType()->isPointerTy()){
+        llvm::PointerType *ptrType = llvm::dyn_cast<llvm::PointerType>(printVal->getType());
+
+        if (printVal->getType() == builder.getInt8Ty()->getPointerTo()){
+            formatStr = builder.CreateGlobalStringPtr("%s\n");
+        }
+
+        //if its length of i8 change to %c for chars
+    } else if (printVal->getType()->isIntegerTy(8)){
+        formatStr = builder.CreateGlobalStringPtr("%c\n");
+
+        //default for integers, make sure its int and change to %d
+    } else {
+
+        if (printVal->getType()->isDoubleTy()){
+            printVal = builder.CreateFPToSI(printVal,builder.getInt32Ty());
+        }
+
+        formatStr = builder.CreateGlobalStringPtr("%d\n");
+    }
+    
+    
+
+    printArgs.push_back(formatStr);
+    printArgs.push_back(printVal);
+
+    builder.CreateCall(mod->getFunction("printf"), printArgs);
+
+    // Reset the float instruction marker.
+    floatInst = false;
+    ret = nullptr;
+
+
+
+
 }

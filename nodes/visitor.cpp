@@ -25,6 +25,9 @@ void Visitor::visit(CharNode *node){
     std::cout << node->getValue();
 }
 
+void Visitor::visit(StringNode *node){
+    std::cout << node->getValue();
+}
 void Visitor::visit(PlusNode *node) {
     node->getLeft()->accept(*this);
     std::cout << " + ";
@@ -123,4 +126,24 @@ void Visitor::visit(IfNode *node) {
     }
     
     std::cout << "}" << std::endl;
+}
+
+void Visitor::visit(OpenNode *node){
+
+}
+
+void Visitor::visit(ReadNode *node){
+    
+}
+
+void Visitor::visit(WriteNode *node){
+    
+}
+
+void Visitor::visit(CloseNode *node){
+    
+}
+
+void Visitor::visit(PrintNode *node){
+
 }
