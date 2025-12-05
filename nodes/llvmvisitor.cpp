@@ -23,6 +23,7 @@ LLVMVisitor::LLVMVisitor(llvm::raw_fd_ostream &out,
     declareSystemFunctions();
 }
 
+
 void LLVMVisitor::declareSystemFunctions(){
 
     llvm::FunctionType *strerrorType = llvm::FunctionType::get(
@@ -40,14 +41,6 @@ void LLVMVisitor::declareSystemFunctions(){
     );
     llvm::Function::Create(printfType, llvm::Function::ExternalLinkage, "printf",mod.get());
 
-    // std::vector<llvm::Type *> params;
-    // // Pointer to int8 would be like char *
-    // params.push_back(llvm::PointerType::get(llvm::Type::getInt8Ty(context), 0));
-
-    // llvm::FunctionType *printfType =
-    //         llvm::FunctionType::get(builder.getInt32Ty(), params, /*isVarArg=*/true);
-    // llvm::Function::Create(printfType, llvm::Function::ExternalLinkage, "printf",
-    //                    mod.get());
 
     //open function
     llvm::FunctionType *openType = llvm::FunctionType::get(
@@ -507,6 +500,7 @@ void LLVMVisitor::visit(WhileNode *node) {
 }
 
 void LLVMVisitor::visit(AssignmentNode *node) {
+
     // Evaluate the expression on the right-hand side (RHS)
     node->getExp()->accept(*this);
     
@@ -516,6 +510,7 @@ void LLVMVisitor::visit(AssignmentNode *node) {
     llvm::AllocaInst *allocation = nullptr;
     llvm::Function *parentFunction = builder.GetInsertBlock()->getParent();
 
+    bool alreadyStored = false;
     // Check if the variable is already allocated
     if (symbolTable.count(node->getName())) {
         allocation = symbolTable[node->getName()];
@@ -523,6 +518,46 @@ void LLVMVisitor::visit(AssignmentNode *node) {
         // If the type changes (e.g., from int to float), we should re-allocate or cast.
         // For simplicity, we assume we want to store the *current* value's type.
         if (type != allocation->getAllocatedType()) {
+
+
+            if (type == llvm::ArrayType::get(builder.getInt8Ty(),type->getArrayNumElements()) && allocation->getAllocatedType()->isPointerTy()){
+                
+                // this if means that a char[] is being asigned to a string, time to cook some magic #no ai used here XD!
+
+
+                llvm::AllocaInst *arrAllocation =  symbolTable[dynamic_cast<IdentifierNode*>(node->getExp())->getName()];
+
+                
+
+                std::cout << node->getLine() << " " << dynamic_cast<IdentifierNode*>(node->getExp())->getName() << std::endl;
+
+                std::vector<llvm::Value*> indices1;
+                indices1.push_back(builder.getInt64(0)); 
+                indices1.push_back(builder.getInt64(0)); 
+
+                llvm::Value* buffer_ptr = builder.CreateInBoundsGEP(
+                    arrAllocation->getAllocatedType(),
+                    arrAllocation,
+                    indices1,
+                    "buffer_ptr"
+                );
+
+
+                builder.CreateStore(
+                    buffer_ptr,
+                    allocation
+                );
+
+                alreadyStored = true;
+
+
+
+
+
+            }
+            
+
+
              // In a real compiler, type mismatch would be an error or require explicit casting.
              // Here, we proceed to store the current value (LLVM allows storing value of T into pointer to T).
         }
@@ -533,13 +568,17 @@ void LLVMVisitor::visit(AssignmentNode *node) {
     }
     
     // Store the result of the expression into the allocated memory.
+    if (!alreadyStored){
     builder.CreateStore(value, allocation);
+
+    }
     
     // Assignment is a statement, so we don't need a meaningful return value.
     ret = nullptr; 
 }
 
 void LLVMVisitor::visit(ArrayDefNode *node) {
+
     std::cout << "DEBUG: Visiting Array Definition for " << node->getName() << std::endl;
 
     // Visit the size expression
@@ -625,11 +664,13 @@ void LLVMVisitor::visit(ArrayDefNode *node) {
     // --- LOOP BODY ---
     builder.SetInsertPoint(loopBody);
     
+
     // Get pointer to array[i]
     llvm::Value *iBodyVal = builder.CreateLoad(builder.getInt32Ty(), iPtr);
     llvm::Value *indices[] = { builder.getInt32(0), iBodyVal };
     llvm::Value *elemPtr = builder.CreateInBoundsGEP(arrayType, arrayAllocation, indices, "elem.ptr");
     
+
     // Store initial value
     builder.CreateStore(initialValue, elemPtr);
     
@@ -647,6 +688,7 @@ void LLVMVisitor::visit(ArrayDefNode *node) {
 }
 
 void LLVMVisitor::visit(ArrayAccessNode *node) {
+    
     // Look up the array in the symbol table
     if (symbolTable.find(node->getName()) == symbolTable.end()) {
         std::cerr << "Error: Array '" << node->getName() << "' not defined." << std::endl;
@@ -696,6 +738,7 @@ void LLVMVisitor::visit(ArrayAccessNode *node) {
 }
 
 void LLVMVisitor::visit(ArrayAssignNode *node) {
+
     // Evaluate the RHS (Value to be stored)
     node->getValueExpression()->accept(*this);
     llvm::Value *valueToStore = ret;
@@ -756,6 +799,8 @@ void LLVMVisitor::visit(ArrayAssignNode *node) {
 }
 
 void LLVMVisitor::visit(IdentifierNode *node) {
+    std::cout<<"|||||||||||||||||||||identifier readnode|||||||||||||||||||| " << std::endl;
+
     // Look up the variable in the symbol table.
     llvm::AllocaInst *allocation = symbolTable[node->getName()];
 
@@ -779,6 +824,7 @@ void LLVMVisitor::visit(IdentifierNode *node) {
 }
 
 void LLVMVisitor::visit(IntegerNode *node) {
+
     // Return the LLVM int value.
     ret = llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(context), node->getValue());
 }
@@ -793,10 +839,12 @@ void LLVMVisitor::visit(FloatNode *node) {
 }
 
 void LLVMVisitor::visit(CharNode *node){
+
     ret = llvm::ConstantInt::get(llvm::Type::getInt8Ty(context), node->getValue());
 }
 
 void LLVMVisitor::visit(StringNode *node){
+
     
     const char *str = node->getValue();
 
@@ -972,19 +1020,167 @@ void LLVMVisitor::visit(OpenNode *node){
     
 }
 
+void LLVMVisitor::placeComent(){
+    llvm::Function* dbgLabelFunc = mod->getFunction("llvm.dbg.label");
+    if (!dbgLabelFunc) {
+        llvm::Type* voidTy = builder.getVoidTy();
+        llvm::Type* mdTy = llvm::Type::getMetadataTy(context);
+        llvm::FunctionType* funcTy = llvm::FunctionType::get(voidTy, {mdTy}, false);
+        
+        dbgLabelFunc = llvm::Function::Create(
+            funcTy, 
+            llvm::Function::ExternalLinkage, 
+            "llvm.dbg.label", 
+            *mod 
+        );
+    }
+    
+    // 2. Create the string metadata node for the label.
+    llvm::MDNode* labelNode = llvm::MDNode::get(context, 
+        llvm::MDString::get(context, "--- Starting READ SYSCALL preparation ---")
+    );
+
+    // 3. Create a call to the intrinsic.
+    llvm::Value* metadataValue = llvm::MetadataAsValue::get(context, labelNode);
+    builder.CreateCall(dbgLabelFunc, metadataValue);
+
+}
+
 void LLVMVisitor::visit(ReadNode *node){
     node->getFdExp()->accept(*this);
     llvm::Value* fd_val = ret;
 
-    node->getBufExp()->accept(*this);
-    llvm::Value* buffer_val = ret;
+    //node->getBufExp()->accept(*this);
+
+    
+    llvm::Value* buffer_ptr = nullptr;
+    //llvm::Value* raw_buffer_val = ret;
+
+
+    llvm::AllocaInst *allocation =  symbolTable[dynamic_cast<IdentifierNode*>(node->getBufExp())->getName()];
+
+    std::vector<llvm::Value*> indices1;
+    indices1.push_back(builder.getInt64(0)); 
+    indices1.push_back(builder.getInt64(0)); 
+
+    buffer_ptr = builder.CreateInBoundsGEP(
+        allocation->getAllocatedType(),
+        allocation,
+        indices1,
+        "buffer_ptr"
+    );
+
+    // if (llvm::AllocaInst *arrayAlloc = llvm::dyn_cast<llvm::AllocaInst>(raw_buffer_val)) {
+    //     std::vector<llvm::Value*> indices;
+    //     indices.push_back(builder.getInt32(0)); 
+    //     indices.push_back(builder.getInt32(0)); 
+        
+    //     // %buffer_ptr = getelementptr inbounds [4 x i8], ptr %read_buffer, i32 0, i32 0
+    //     buffer_ptr = builder.CreateInBoundsGEP(
+    //         arrayAlloc->getAllocatedType(), 
+    //         arrayAlloc, 
+    //         indices, 
+    //         "read_buffer_ptr"
+    //     );
+    // } else {
+    //     // Fallback: Assume the expression already returned a valid pointer.
+    //     buffer_ptr = raw_buffer_val;
+    // }
+
+    // llvm::Function *parentFunction = builder.GetInsertBlock()->getParent();
+    // llvm::AllocaInst *iPtr = createEntryBlockAlloca(parentFunction, "i", builder.getInt32Ty());
+
+    // llvm::AllocaInst *arrayAllocation = createEntryBlockAlloca(
+    //     parentFunction, 
+    //     "read_data", 
+    //     builder.getInt8Ty()->getPointerTo()
+    // );
+    // symbolTable["read_data"] = arrayAllocation;
+
+    // llvm::Value *iBodyVal = builder.CreateLoad(builder.getInt32Ty(), iPtr);
+    // llvm::Value *indices[] = { builder.getInt32(0), iBodyVal };
+    // llvm::Value *elemPtr = builder.CreateInBoundsGEP(buffer_ptr->getType(), arrayAllocation, indices, "read_buffer");
+
+    //================================================================
+
+
+    // if (llvm::AllocaInst *arrayAlloc = llvm::dyn_cast<llvm::AllocaInst>(raw_buffer_val)) {
+    //     std::vector<llvm::Value*> indices;
+    //     indices.push_back(builder.getInt32(0)); 
+    //     indices.push_back(builder.getInt32(0)); 
+        
+    //     // %buffer_ptr = getelementptr inbounds [4 x i8], ptr %read_buffer, i32 0, i32 0
+    //     buffer_ptr = builder.CreateInBoundsGEP(
+    //         arrayAlloc->getAllocatedType(), 
+    //         arrayAlloc, 
+    //         indices, 
+    //         "read_buffer_ptr"
+    //     );
+    // } else {
+    //     // Fallback: Assume the expression already returned a valid pointer.
+    //     buffer_ptr = raw_buffer_val;
+    // }
+
+    // llvm::Function *parentFunction = builder.GetInsertBlock()->getParent();
+    // llvm::AllocaInst *iPtr = createEntryBlockAlloca(parentFunction, "i", builder.getInt32Ty());
+
+    // llvm::AllocaInst *arrayAllocation = createEntryBlockAlloca(
+    //     parentFunction, 
+    //     "read_data", 
+    //     builder.getInt8Ty()->getPointerTo()
+    // );
+    // symbolTable["read_data"] = arrayAllocation;
+
+    // llvm::Value *iBodyVal = builder.CreateLoad(builder.getInt32Ty(), iPtr);
+    // llvm::Value *indices[] = { builder.getInt32(0), iBodyVal };
+    // llvm::Value *elemPtr = builder.CreateInBoundsGEP(buffer_ptr->getType(), arrayAllocation, indices, "read_buffer");
+
+
 
     node->getCountExp()->accept(*this);
     llvm::Value* count_val = ret;
 
-    std::vector<llvm::Value*> args = {fd_val,buffer_val,count_val};
 
-    ret = builder.CreateCall(mod->getFunction("read"),args,"read_bytes");
+    std::vector<llvm::Value*> args = {fd_val,buffer_ptr,count_val};
+
+    llvm::Value* read_bytes_value = builder.CreateCall(mod->getFunction("read"),args,"read_bytes");
+
+
+    llvm::Value* read_bytes_zext = builder.CreateZExt(
+        read_bytes_value,
+        builder.getInt64Ty(),
+        "read_bytes_zext"
+    );
+
+    llvm::Value* null_ptr = builder.CreateInBoundsGEP(
+        builder.getInt8Ty(),
+        buffer_ptr,
+        read_bytes_zext,
+        "null_terminator_ptr"
+    );
+
+    // std::string typestring;
+    // llvm::raw_string_ostream abortas(typestring);
+    // buffer_ptr->getType()->print(abortas);
+    // std::cout << "##############" << typestring << "" << std::endl;
+
+    builder.CreateStore(
+        builder.getInt8(0),
+        null_ptr
+    );
+
+
+    // builder.CreateLoad(
+    //     buffer_ptr->getType(),
+    //     elemPtr
+    // );
+
+    // builder.CreateStore(
+    //     buffer_ptr,
+    //     elemPtr
+    // );
+    ret = read_bytes_value;
+
 }
 
 void LLVMVisitor::visit(WriteNode *node){
@@ -1023,47 +1219,150 @@ void LLVMVisitor::visit(PrintNode *node){
     llvm::Value *formatStr;
     llvm::Value *printVal = ret;
 
+    // std::string typestring;
+    // llvm::raw_string_ostream abortas(typestring);
+    // printVal->getType()->print(abortas);
 
-    if (floatInst) {
-        //if float make sure its a double and change to %f
-        if (!printVal->getType()->isDoubleTy())
-            printVal = builder.CreateSIToFP(printVal, builder.getDoubleTy());
-            
-        formatStr = builder.CreateGlobalStringPtr("%f\n");
+    // std::string anotherone;
+    // llvm::raw_string_ostream damn(anotherone);
+    // llvm::ArrayType::get(builder.getInt8Ty(),4)->print(damn);
 
-        //if its a pointer and i8 length change to %s for strings
-    } else if (printVal->getType()->isPointerTy()){
-        llvm::PointerType *ptrType = llvm::dyn_cast<llvm::PointerType>(printVal->getType());
+    // std::cout << node->getLine() << " " << typestring << " | " << anotherone <<std::endl;
 
-        if (printVal->getType() == builder.getInt8Ty()->getPointerTo()){
-            formatStr = builder.CreateGlobalStringPtr("%s\n");
+
+    if (llvm::ArrayType *arrayType = llvm::dyn_cast<llvm::ArrayType>(printVal->getType())){
+        llvm::Type *elementType = arrayType->getElementType();
+        unsigned numElements = arrayType->getNumElements();
+
+        llvm::Value *arrayPtr = builder.CreateAlloca(arrayType, nullptr, "array.ptr");
+        builder.CreateStore(printVal,arrayPtr);
+
+        llvm::Value *elementFormatStr;
+        if (elementType->isIntegerTy(8)) {
+            elementFormatStr = builder.CreateGlobalStringPtr("%c"); // Character, space separator
+        } else if (elementType->isIntegerTy()) {
+            elementFormatStr = builder.CreateGlobalStringPtr("%d"); // Integer, space separator
+        } else if (elementType->isFloatTy() || elementType->isDoubleTy()) {
+            elementFormatStr = builder.CreateGlobalStringPtr("%f"); // Float, space separator
+        } else {
+            // Handle other types if necessary, for now, skip array printing
+            // Or default to a placeholder format
+            elementFormatStr = builder.CreateGlobalStringPtr("%s");
         }
 
-        //if its length of i8 change to %c for chars
-    } else if (printVal->getType()->isIntegerTy(8)){
-        formatStr = builder.CreateGlobalStringPtr("%c\n");
+        llvm::BasicBlock *PreHeaderBlock = builder.GetInsertBlock();
 
-        //default for integers, make sure its int and change to %d
-    } else {
+        
+        llvm::Function *TheFunction = builder.GetInsertBlock()->getParent();
+        llvm::BasicBlock *LoopHeader = llvm::BasicBlock::Create(context, "array.loop.header", TheFunction);
+        llvm::BasicBlock *LoopBody = llvm::BasicBlock::Create(context, "array.loop.body", TheFunction);
+        llvm::BasicBlock *LoopExit = llvm::BasicBlock::Create(context, "array.loop.exit", TheFunction);
 
-        if (printVal->getType()->isDoubleTy()){
-            printVal = builder.CreateFPToSI(printVal,builder.getInt32Ty());
+        builder.CreateBr(LoopHeader);
+
+        builder.SetInsertPoint(LoopHeader);
+
+        llvm::PHINode *index = builder.CreatePHI(builder.getInt32Ty(), 2, "index.i");
+        llvm::Value *initialIndex = builder.getInt32(0);
+        index->addIncoming(initialIndex, PreHeaderBlock);
+
+        llvm::Value *condition = builder.CreateICmpULT(index, builder.getInt32(numElements), "loop.cond");
+        builder.CreateCondBr(condition, LoopBody, LoopExit);
+
+        // --- Loop Body: Element Access and Print ---
+        builder.SetInsertPoint(LoopBody);
+        llvm::Value *elementPtr = builder.CreateInBoundsGEP(arrayType, arrayPtr, {builder.getInt32(0), index}, "element.ptr");
+        llvm::Value *elementValue = builder.CreateLoad(elementType, elementPtr, "element.val");
+
+        // Handle required type conversions for printf (e.g., extend i8 to i32 for printf or float to double)
+        if (elementType->isIntegerTy(8)) {
+            // printf handles i8 as i32, so zero-extend (or sign-extend depending on language)
+            elementValue = builder.CreateZExt(elementValue, builder.getInt32Ty(), "char.to.int");
+        } else if (elementType->isIntegerTy()) {
+            // If it's a smaller integer, extend it to i32 for printf
+            if (elementType->getIntegerBitWidth() < 32) {
+                elementValue = builder.CreateSExt(elementValue, builder.getInt32Ty(), "smallint.to.int32");
+            }
+        } else if (elementType->isFloatTy()) {
+            // Promote float to double for varargs functions like printf
+            elementValue = builder.CreateFPExt(elementValue, builder.getDoubleTy(), "float.to.double");
         }
 
-        formatStr = builder.CreateGlobalStringPtr("%d\n");
+        // Call printf for the current element
+        printArgs.clear();
+        printArgs.push_back(elementFormatStr);
+        printArgs.push_back(elementValue);
+        builder.CreateCall(mod->getFunction("printf"), printArgs, "array.element.print");
+
+        // Increment index: i + 1
+        llvm::Value *nextIndex = builder.CreateAdd(index, builder.getInt32(1), "next.index");
+        
+        // Update PHI node and branch back to header
+        llvm::BasicBlock *LoopBodyBlock = builder.GetInsertBlock();
+        index->addIncoming(nextIndex, LoopBodyBlock);
+        builder.CreateBr(LoopHeader);
+
+        // --- Loop Exit: Final Print (Newline) and Cleanup ---
+        builder.SetInsertPoint(LoopExit);
+        
+        // Print a final newline character after the array
+        llvm::Value *newlineFormatStr = builder.CreateGlobalStringPtr("\n");
+        printArgs.clear();
+        printArgs.push_back(newlineFormatStr);
+        builder.CreateCall(mod->getFunction("printf"), printArgs, "array.newline.print");
+
+        // Clear ret to stop the regular print logic from running
+        ret = nullptr;
+
+
     }
-    
-    
 
-    printArgs.push_back(formatStr);
-    printArgs.push_back(printVal);
 
-    builder.CreateCall(mod->getFunction("printf"), printArgs);
+    if(ret){
 
-    // Reset the float instruction marker.
+        if (floatInst) {
+            //if float make sure its a double and change to %f
+            if (!printVal->getType()->isDoubleTy())
+                printVal = builder.CreateSIToFP(printVal, builder.getDoubleTy());
+                
+            formatStr = builder.CreateGlobalStringPtr("%f\n");
+
+            //if its a pointer and i8 length change to %s for strings
+        } else if (printVal->getType()->isPointerTy()){
+            llvm::PointerType *ptrType = llvm::dyn_cast<llvm::PointerType>(printVal->getType());
+
+            if (printVal->getType() == builder.getInt8Ty()->getPointerTo()){
+                formatStr = builder.CreateGlobalStringPtr("%s\n");
+            }
+
+            //if its length of i8 change to %c for chars
+        } else if (printVal->getType()->isIntegerTy(8)){
+            formatStr = builder.CreateGlobalStringPtr("%c\n");
+
+            //default for integers, make sure its int and change to %d
+        } else {
+
+            if (printVal->getType()->isDoubleTy()){
+                printVal = builder.CreateFPToSI(printVal,builder.getInt32Ty());
+            }
+
+            formatStr = builder.CreateGlobalStringPtr("%d\n");
+        }
+        
+        
+
+        printArgs.push_back(formatStr);
+        printArgs.push_back(printVal);
+
+        builder.CreateCall(mod->getFunction("printf"), printArgs);
+
+        // Reset the float instruction marker.
+        
+
+    }
+
     floatInst = false;
     ret = nullptr;
-
 
 
 

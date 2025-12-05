@@ -76,6 +76,8 @@ private:
     llvm::Function* getFunctionOverload(const std::string& name, const std::vector<llvm::Type*>& argTypes);
 
     void declareSystemFunctions();
+    void placeComent();
+    
 };
 
 #endif

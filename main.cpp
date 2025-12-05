@@ -26,7 +26,6 @@ int main(int argc, char **argv) {
 
     printf("parsing\n");
     yyparse();
-    mod->setTargetTriple(llvm::Triple("x86_64-pc-linux-gnu"));   
     llvm::StringRef filename = "temp.ll";
     std::error_code ec;
     llvm::raw_fd_ostream out(filename, ec);
