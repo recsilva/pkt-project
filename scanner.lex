@@ -16,6 +16,15 @@
 "while"       { return WHILE; }
 "def"         { return DEFINE; }
 
+"int[]"       { return INT_ARRAY_TYPE; }
+"flt[]"       { return FLT_ARRAY_TYPE; }
+"str"         { return STR_TYPE; }
+
+"int"         { return INT_TYPE; }
+"flt"         { return FLT_TYPE; }
+"chr"         { return CHR_TYPE; }
+
+
 [a-zA-Z][a-zA-Z0-9_]* { yylval.idName = strdup(yytext); return ID; }
 [0-9]+\.[0-9]+ { yylval.floatVal = atof(yytext); return FLOAT_LITERAL; }
 [0-9]+        { yylval.intVal = atoi(yytext); return INTEGER_LITERAL;}
@@ -36,6 +45,8 @@
 "("           { return PAREN_LEFT; }
 ")"           { return PAREN_RIGHT; }
 ":"           { return DEFINE_DEFAULT; }
+
+
 
 "<=" { return LE; }
 ">=" { return GE; }

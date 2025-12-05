@@ -3,16 +3,16 @@
 #define PARAMDEFNODE_H
 
 #include "base/node.h"
-#include "base/expnode.h"
+#include "typenode.h"
 #include <string>
 
 class ParamDefNode : public Node {
 public:
-    ParamDefNode(int line, char *name, ExpNode *defaultValue);
+    ParamDefNode(int line, char *name, TypeNode *type);
     ~ParamDefNode();
 
     const std::string& getName() const { return name; }
-    ExpNode* getDefaultValue() const { return defaultValue; }
+    TypeNode* getType() const { return type; }
 
     // Note: This node won't have a visitor method itself, 
     // it's just data consumed by FunctionDefNode::visit
@@ -20,7 +20,7 @@ public:
 
 private:
     std::string name;
-    ExpNode *defaultValue; // Nullptr if no default value provided
+    TypeNode *type; // Nullptr if no default value provided
 };
 
 #endif

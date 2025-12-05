@@ -123,52 +123,52 @@ void LLVMVisitor::visit(StatementNode *node) {
 
     node->getExp()->accept(*this);
 
-    // Call printf with our returned value.
-    std::vector<llvm::Value *> printArgs;
+    // // Call printf with our returned value.
+    // std::vector<llvm::Value *> printArgs;
 
-    if (!ret){return;}
+    // if (!ret){return;}
 
-    llvm::Value *formatStr;
-    llvm::Value *printVal = ret;
+    // llvm::Value *formatStr;
+    // llvm::Value *printVal = ret;
 
-    if (floatInst) {
-        //if float make sure its a double and change to %f
-        if (!printVal->getType()->isDoubleTy())
-            printVal = builder.CreateSIToFP(printVal, builder.getDoubleTy());
+    // if (floatInst) {
+    //     //if float make sure its a double and change to %f
+    //     if (!printVal->getType()->isDoubleTy())
+    //         printVal = builder.CreateSIToFP(printVal, builder.getDoubleTy());
 
             
-        formatStr = builder.CreateGlobalStringPtr("%f\n");
+    //     formatStr = builder.CreateGlobalStringPtr("%f\n");
 
-        //if its a pointer and i8 length change to %s for strings
-    } else if (printVal->getType()->isPointerTy()){
-        llvm::PointerType *ptrType = llvm::dyn_cast<llvm::PointerType>(printVal->getType());
+    //     //if its a pointer and i8 length change to %s for strings
+    // } else if (printVal->getType()->isPointerTy()){
+    //     llvm::PointerType *ptrType = llvm::dyn_cast<llvm::PointerType>(printVal->getType());
 
-        if (printVal->getType() == builder.getInt8Ty()->getPointerTo()){
-            formatStr = builder.CreateGlobalStringPtr("%s\n");
-        }
+    //     if (printVal->getType() == builder.getInt8Ty()->getPointerTo()){
+    //         formatStr = builder.CreateGlobalStringPtr("%s\n");
+    //     }
 
-        //if its length of i8 change to %c for chars
-    } else if (printVal->getType()->isIntegerTy(8)){
-        formatStr = builder.CreateGlobalStringPtr("%c\n");
+    //     //if its length of i8 change to %c for chars
+    // } else if (printVal->getType()->isIntegerTy(8)){
+    //     formatStr = builder.CreateGlobalStringPtr("%c\n");
 
-        //default for integers, make sure its int and change to %d
-    } else {
+    //     //default for integers, make sure its int and change to %d
+    // } else {
 
-        if (printVal->getType()->isDoubleTy()){
-            printVal = builder.CreateFPToSI(printVal,builder.getInt32Ty());
-        }
+    //     if (printVal->getType()->isDoubleTy()){
+    //         printVal = builder.CreateFPToSI(printVal,builder.getInt32Ty());
+    //     }
 
-        formatStr = builder.CreateGlobalStringPtr("%d\n");
-    }
+    //     formatStr = builder.CreateGlobalStringPtr("%d\n");
+    // }
 
-    printArgs.push_back(formatStr);
-    printArgs.push_back(printVal);
+    // printArgs.push_back(formatStr);
+    // printArgs.push_back(printVal);
 
-    //builder.CreateCall(mod->getFunction("magic"),printArgs);
-    builder.CreateCall(mod->getFunction("printf"), printArgs);
+    // //builder.CreateCall(mod->getFunction("magic"),printArgs);
+    // builder.CreateCall(mod->getFunction("printf"), printArgs);
 
-    // Reset the float instruction marker.
-    floatInst = false;
+    // // Reset the float instruction marker.
+    // floatInst = false;
 }
 
 void LLVMVisitor::visit(IfNode *node) {
@@ -302,71 +302,95 @@ llvm::Function* LLVMVisitor::getFunctionOverload(const std::string& name, const 
     return nullptr; // No matching overload found
 }
 
+void LLVMVisitor::visit(TypeNode *node) {
+    // Reset the type result before processing
+    currentType = nullptr; 
+    printf("arg-type: ");
+    switch (node->getTypeId()) {
+        case TypeNode::INT:
+            currentType = builder.getInt32Ty(); // Use i32 for simplicity
+            printf("INT ");
+            break;
+        case TypeNode::FLT:
+            currentType = builder.getDoubleTy();
+            printf("FLOAT ");
+            break;
+        case TypeNode::INT_ARRAY:
+            // Arrays are passed as pointers to their element type (i32*)
+            currentType = llvm::PointerType::get(builder.getInt32Ty(), 0);
+            printf("INT[] ");
+            break;
+        case TypeNode::FLT_ARRAY:
+            // Arrays are passed as pointers to their element type (float*)
+            currentType = llvm::PointerType::get(builder.getDoubleTy(), 0);
+            printf("FLOAT[] ");
+            break;
+        case TypeNode::CHR:
+            // Characters are often represented as a small integer (i8)
+            currentType = builder.getInt8Ty();
+            printf("CHAR ");
+            break;
+        case TypeNode::STRING:
+            // Strings are usually passed as a pointer to i8 (i8*)
+            currentType = llvm::PointerType::get(builder.getInt8Ty(), 0);
+            printf("STRING ");
+            break;
+        case TypeNode::VOID:
+            // Used for function return types that don't return a value
+            currentType = builder.getVoidTy();
+            printf("VOID ");
+            break;
+        default:
+            // currentType remains nullptr for error handling
+            std::cerr << "Error: Unhandled TypeId in TypeNode visitor." << std::endl;
+            break; 
+    }
+    printf("\n");
+}
 
-// --- Function Definition ---
 void LLVMVisitor::visit(FunctionDefNode *node) {
-    // printf("FUNCTION DEFINITION, line no: %i\n", node->getLine());
-    // std::cout << "     NAME: " << node->getName() << std::endl;
-
     // Save current state (required for nesting functions and statements)
     llvm::BasicBlock *oldBlock = builder.GetInsertBlock();
     auto outerSymbolTable = symbolTable;
+
     symbolTable.clear(); // Initialize fresh symbol table for new function scope
 
-    // 1. Determine function signature (We assume 'float' return type for simplicity)
-    llvm::Type *retType = builder.getFloatTy();
+    // 1. Determine function signature
+    // NOTE: If you add explicit return types (e.g., 'def int main(){...}'), 
+    // you would also visit the return type here. Sticking to current float assumption.
+    llvm::Type *retType = builder.getFloatTy(); 
+    
     std::vector<llvm::Type*> paramTypes;
     
-
-    // Determine parameter types based on default values
+    // REPLACING THE HACK WITH EXPLICIT TYPE VISITING
+    // Determine parameter types using the explicit TypeNode*
     for (ParamDefNode *paramDef : *node->getParams()) {
-        llvm::Type *inferredType = builder.getFloatTy(); // Default assumption (float)
-
-        if (paramDef->getDefaultValue()) {
-            // Temporarily evaluate the default expression *without* side effects
-            // This is complex in a real compiler, here we'll simulate type inference:
-            
-            // A clean way would be to create a temporary visitor to evaluate 
-            // the default expression and observe its type. Since we can't easily 
-            // spin up a new visitor, we'll run the expression and check its type 
-            // before generating the function.
-
-            // HACK: Re-run the expression visitor temporarily to see the type
-            // This requires careful state management to avoid polluting `ret`.
-            
-            llvm::Value *tempRet = nullptr;
-            bool tempFloatInst = false;
-            
-            // Save global state
-            llvm::Value *originalRet = ret;
-            bool originalFloatInst = floatInst;
-
-            paramDef->getDefaultValue()->accept(*this);
-            tempRet = ret;
-            tempFloatInst = floatInst;
-
-            // Restore global state
-            ret = originalRet;
-            floatInst = originalFloatInst;
-            builder.SetInsertPoint(oldBlock); // Restore builder position too
-
-            if (tempRet) {
-                inferredType = tempRet->getType();
-            }
+        
+        // 1. Visit the TypeNode to populate currentType
+        paramDef->getType()->accept(*this);
+        
+        // 2. Retrieve the result
+        llvm::Type *paramLLVMType = currentType;
+        
+        // Error check
+        if (!paramLLVMType) {
+            // Handle error and return
+            return; 
         }
         
-        paramTypes.push_back(inferredType); 
+        paramTypes.push_back(paramLLVMType); 
     }
+    // END OF CLEAN TYPE RESOLUTION
     
     llvm::FunctionType *funcType = llvm::FunctionType::get(retType, paramTypes, false);
     
-    // 2. Create the LLVM Function and register it
+    // 2. Create the LLVM Function and register it (No Change)
     llvm::Function *F = llvm::Function::Create(
         funcType, llvm::Function::ExternalLinkage, node->getName(), mod.get());
     
     functionTable[node->getName()].push_back(F);
     
-    // 3. Set up parameters and entry block
+    // 3. Set up parameters and entry block (No Change)
     llvm::BasicBlock *entryBlock = llvm::BasicBlock::Create(context, "entry", F);
     builder.SetInsertPoint(entryBlock);
 
@@ -379,22 +403,23 @@ void LLVMVisitor::visit(FunctionDefNode *node) {
         paramIt->setName(paramName);
         
         // Allocate stack space and store the passed argument (making it a local variable)
+        // The type (paramIt->getType()) is now guaranteed to be correct from step 1.
         llvm::AllocaInst *Alloca = createEntryBlockAlloca(F, paramName, paramIt->getType());
         builder.CreateStore(paramIt, Alloca);
         symbolTable[paramName] = Alloca;
     }
 
-    // 4. Visit the function body
+    // 4. Visit the function body (No Change)
     for (StatementNode *stmt : *node->getBody()) {
         stmt->accept(*this);
     }
     
-    // 5. Ensure function is terminated
+    // 5. Ensure function is terminated (No Change)
     if (!builder.GetInsertBlock()->getTerminator()) {
         builder.CreateRet(llvm::ConstantFP::get(context, llvm::APFloat(0.0f)));
     }
 
-    // 6. Restore previous context
+    // 6. Restore previous context (No Change)
     symbolTable = outerSymbolTable;
     if (oldBlock) {
         builder.SetInsertPoint(oldBlock);
@@ -402,26 +427,58 @@ void LLVMVisitor::visit(FunctionDefNode *node) {
     ret = nullptr; 
 }
 
-// --- Function Call ---
 void LLVMVisitor::visit(FunctionCallNode *node) {
-    // printf("FUNCTION INVOCATION, line no: %i\n", node->getLine());
-    // std::cout << "     NAME: " << node->getName() << std::endl;
-
+    printf("--------- FUNCTION CALL VISIT -----------\n");
+    // 1. Evaluate all arguments and collect values/types
     std::vector<llvm::Value*> argValues;
     std::vector<llvm::Type*> argTypes;
 
-    // 1. Evaluate all arguments and collect types
+    std::cout<< " | ";
     for (ExpNode *arg : *node->getArgs()) {
-        arg->accept(*this);
-        argValues.push_back(ret);
-        argTypes.push_back(ret->getType());
+        // 1. Visit the argument expression
+        arg->accept(*this); 
+        if (!ret) { /* ... error handling ... */ return; }
+
+         printf("arg name: \"%s\" ", ret->getName());
+
+        llvm::Value* argVal = ret;
+
+        // check if array
+        if (argVal->getType()->isArrayTy()){
+            printf("deference array");
+            
+            llvm::Type *arrType = argVal->getType()->getArrayElementType();
+            
+            std::vector<llvm::Value*> indices;
+            indices.push_back(builder.getInt32(0)); // Dereference array ptr
+            indices.push_back(builder.getInt32(0)); // Index 0
+
+            argVal = builder.CreateInBoundsGEP(arrType, argVal, indices, "arraydecay");
+        }
+
+        // currentArgType = llvm::PointerType::getUnqual(elemTy);
+        
+        argValues.push_back(argVal);
+        argTypes.push_back(argVal->getType());
+        // --- END: New Logic for Array-to-Pointer Decay ---
+        
+        // ... (Debug printing and ret = nullptr) ...
+        std::string type_str;
+        llvm::raw_string_ostream rso(type_str);
+        argVal->print(rso); // Print the DECAYED type
+        std::cout << rso.str() << " ";
+        
+        ret = nullptr; 
     }
+    std::cout<< "\n";
 
     // 2. Resolve Overload
+    // This function must find the best match in your functionTable based on name and exact type signature.
     llvm::Function *F = getFunctionOverload(node->getName(), argTypes);
 
     if (!F) {
-        std::cerr << "Error (Line " << node->getLine() << "): No matching function overload found for '" << node->getName() << "'." << std::endl;
+        std::cerr << "Error (Line " << node->getLine() << "): No matching function overload found for '" << node->getName() << "' with the provided positional argument types." << std::endl;
+        // Set error return value (e.g., 0.0f) and exit
         ret = llvm::ConstantFP::get(context, llvm::APFloat(0.0f)); 
         floatInst = true;
         return;
@@ -429,25 +486,44 @@ void LLVMVisitor::visit(FunctionCallNode *node) {
 
     // 3. Generate the Call Instruction with necessary coercion
     std::vector<llvm::Value*> finalArgs;
+    
+    // Get iterator for the target function's parameters
     auto paramIt = F->arg_begin();
 
     for (size_t i = 0; i < argValues.size(); ++i) {
         llvm::Value* argVal = argValues[i];
         llvm::Type* paramType = paramIt->getType();
         
+        // Check for type mismatch that needs coercion (e.g., i32 -> float)
         if (argVal->getType() != paramType) {
-            // Coerce integer arguments to float parameters
+            
+            // Coerce integer arguments to float parameters (SIToFP: Signed Integer to Float)
             if (argVal->getType()->isIntegerTy() && paramType->isFloatingPointTy()) {
                 argVal = builder.CreateSIToFP(argVal, paramType, "castToFloat");
             } 
+            else {
+                 std::cerr << "Warning (Line " << node->getLine() << "): Unhandled type coercion needed for argument " << i << "." << std::endl;
+            }
         }
+        
         finalArgs.push_back(argVal);
-        paramIt++;
+        
+        // Move to the next parameter for the next argument
+        paramIt++; 
+    }
+    
+    // After the loop, check if the argument count matches the parameter count
+    if (paramIt != F->arg_end()) {
+        std::cerr << "Error (Line " << node->getLine() << "): Too few arguments provided for function '" << node->getName() << "'." << std::endl;
+        // ... Error cleanup ...
+        return;
     }
 
+
+    // 4. Generate the Call Instruction
     ret = builder.CreateCall(F, finalArgs, "calltmp");
     floatInst = ret->getType()->isFloatingPointTy();
-    ret = nullptr; 
+    printf("----------------------------------------\n");
 }
 
 void LLVMVisitor::visit(WhileNode *node) {
@@ -633,7 +709,13 @@ void LLVMVisitor::visit(ArrayDefNode *node) {
         node->getName(), 
         arrayType
     );
-    symbolTable[node->getName()] = arrayAllocation;
+    symbolTable[node->getName()] = arrayAllocation; 
+
+    llvm::Value* elemVal = builder.CreateLoad(arrayType, arrayAllocation);
+
+    // symbolTable["ar"]->getAllocatedType()->print(llvm::errs());
+
+    printf(" - array created\n");
 
     // --- LOOP SETUP ---
     
@@ -673,6 +755,14 @@ void LLVMVisitor::visit(ArrayDefNode *node) {
 
     // Store initial value
     builder.CreateStore(initialValue, elemPtr);
+
+    // std::cout << "hello" << std::endl;
+
+    // llvm::ArrayType* aT = llvm::dyn_cast<llvm::ArrayType>(elemPtr->getType());   
+    // std::cout << "array type: " << aT << std::endl;
+    // arrayType->print(llvm::errs());
+
+    // std::cout << "hello" << std::endl;
     
     // Increment i
     llvm::Value *nextI = builder.CreateAdd(iBodyVal, builder.getInt32(1), "i.inc");
@@ -688,14 +778,43 @@ void LLVMVisitor::visit(ArrayDefNode *node) {
 }
 
 void LLVMVisitor::visit(ArrayAccessNode *node) {
-    
+
+    printf("--------- ARRAY ACCESS VISIT -----------\n");
+
     // Look up the array in the symbol table
     if (symbolTable.find(node->getName()) == symbolTable.end()) {
         std::cerr << "Error: Array '" << node->getName() << "' not defined." << std::endl;
         ret = builder.getInt32(0); // Return dummy value
         return;
     }
+
+    std::cout << "array name: " << node->getName() << std::endl;
+
+    std::cout << "table entry count: " << symbolTable.size() << std::endl;
+
+    for (const auto& pair : symbolTable) {
+        // printf("iterating");
+        try{
+            std::cout << " (" << pair.first << ") ";
+            pair.second->print(llvm::errs());
+            std::cout << "\n";
+        }
+        catch(int err){
+            printf("access to unassigned value");
+        }
+    }   
+
     llvm::AllocaInst *arrayAlloc = symbolTable[node->getName()];
+    llvm::Value *ptr = arrayAlloc;
+
+    if (arrayAlloc->getAllocatedType()->isPointerTy()){
+
+        ptr = builder.CreateLoad(arrayAlloc->getAllocatedType(), arrayAlloc, "dereferenced");
+        arrayAlloc->getAllocatedType()->print(llvm::errs());
+        arrayAlloc->print(llvm::errs());
+
+        ptr->print(llvm::errs());
+    }
 
     // Evaluate the Index Expression
     node->getIndexExpression()->accept(*this);
@@ -715,7 +834,6 @@ void LLVMVisitor::visit(ArrayAccessNode *node) {
     indices.push_back(builder.getInt32(0)); 
     indices.push_back(indexValue);
 
-    // Get the type of the array being stored (e.g., [100 x i32])
     llvm::Type *arrayType = arrayAlloc->getAllocatedType();
 
     // Create the GEP instruction to get the pointer to the element
@@ -726,15 +844,15 @@ void LLVMVisitor::visit(ArrayAccessNode *node) {
         "elem.ptr"
     );
 
-    // Load the Value from that address
-    // We need to know if we are loading an int or a float
-    llvm::ArrayType *arrType = llvm::dyn_cast<llvm::ArrayType>(arrayType);
-    llvm::Type *elementType = arrType->getElementType();
-
+    llvm::Type *elementType = arrayType;
+    if (!elementType){
+        printf("failed to get data from pointer\n");
+    }
     ret = builder.CreateLoad(elementType, elementPtr, "elem.val");
 
     // Update floatInst flag so parent knows what type 'ret' is
     floatInst = elementType->isDoubleTy();
+    printf("\n----------------------------------------\n");
 }
 
 void LLVMVisitor::visit(ArrayAssignNode *node) {
@@ -799,28 +917,26 @@ void LLVMVisitor::visit(ArrayAssignNode *node) {
 }
 
 void LLVMVisitor::visit(IdentifierNode *node) {
-    std::cout<<"|||||||||||||||||||||identifier readnode|||||||||||||||||||| " << std::endl;
-
-    // Look up the variable in the symbol table.
     llvm::AllocaInst *allocation = symbolTable[node->getName()];
-
     if (!allocation) {
-        // Error: Undefined variable.
-        std::cerr << "Error: Undefined variable '" << node->getName() 
-                  << "' (Line " << node->getLine() << ")" << std::endl;
-        // Return a zero constant (i32) to prevent a crash
+        std::cerr << "Error: Undefined variable " << node->getName() << std::endl;
         ret = builder.getInt32(0);
-        floatInst = false;
-        return; 
+        return;
     }
 
-    // Load the value from the allocated memory.
-    llvm::Type *type = allocation->getAllocatedType();
-    
-    ret = builder.CreateLoad(type, allocation, node->getName());
-    
-    // Update the float instruction marker based on the variable's type
-    floatInst = type->isDoubleTy();
+    llvm::Type *allocType = allocation->getAllocatedType();
+
+    // CRITICAL FIX:
+    // If it is an array (e.g., [5 x i32]), do NOT load it. Return the pointer.
+    if (allocType->isArrayTy()) {
+        ret = allocation; 
+        floatInst = false; 
+    } 
+    // If it is a regular variable or a pointer (like function params), load it.
+    else {
+        ret = builder.CreateLoad(allocType, allocation, node->getName());
+        floatInst = ret->getType()->isDoubleTy();
+    }
 }
 
 void LLVMVisitor::visit(IntegerNode *node) {
@@ -828,8 +944,6 @@ void LLVMVisitor::visit(IntegerNode *node) {
     // Return the LLVM int value.
     ret = llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(context), node->getValue());
 }
-
-
 
 void LLVMVisitor::visit(FloatNode *node) {
     // Return the LLVM float value.
@@ -873,7 +987,6 @@ void LLVMVisitor::visit(StringNode *node){
         indices,
         "stringptr"
     );
-
 }
 
 void LLVMVisitor::visit(PlusNode *node) {
@@ -1210,6 +1323,8 @@ void LLVMVisitor::visit(CloseNode *node){
 
 void LLVMVisitor::visit(PrintNode *node){
 
+    // printf("print node\n");
+
     node->getExp()->accept(*this);
 
     // Call printf with our returned value.
@@ -1363,7 +1478,4 @@ void LLVMVisitor::visit(PrintNode *node){
 
     floatInst = false;
     ret = nullptr;
-
-
-
 }

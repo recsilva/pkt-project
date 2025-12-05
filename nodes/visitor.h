@@ -17,6 +17,8 @@
 #include "types/charnode.h"
 #include "types/stringnode.h"
 
+#include "typenode.h"
+
 #include "memory/identifiernode.h"
 #include "memory/assignmentnode.h"
 
@@ -45,6 +47,7 @@ public:
     virtual void visit(WriteNode *node);
     virtual void visit(CloseNode *node);
     virtual void visit(PrintNode *node);
+    virtual void visit(TypeNode *node);
     virtual void visit(IntegerNode *node);
     virtual void visit(FloatNode *node);
     virtual void visit(CharNode *node);

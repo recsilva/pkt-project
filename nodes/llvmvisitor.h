@@ -10,6 +10,7 @@
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Function.h"
+#include "llvm/IR/DerivedTypes.h"
 
 #include "visitor.h"
 
@@ -25,6 +26,8 @@ public:
     void visit(FloatNode *node);
     void visit(CharNode *node);
     void visit(StringNode *node);
+
+    void visit(TypeNode *node);
 
     void visit(PlusNode *node);
     void visit(UMinusNode *node);
@@ -52,6 +55,8 @@ public:
 
     void visit(PrintNode *node);
 
+    llvm::Type* getCurrentType() const { return currentType; }
+
 private:
     llvm::raw_fd_ostream &out;
     llvm::LLVMContext &context;
@@ -66,6 +71,7 @@ private:
 
     // The "return value" from the previous visit method.
     llvm::Value *ret;
+    llvm::Type *currentType;
     bool floatInst;
 
     // Helper function to create stack allocation in the entry block

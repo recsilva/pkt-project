@@ -6,16 +6,21 @@ DIRS = nodes/*.cpp nodes/base/*.cpp nodes/types/*.cpp nodes/memory/*.cpp nodes/a
 
 CHILDREN := (Get-ChildItem nodes\*.cpp)
 
-.PHONY: run, build
+.PHONY: run, build, clear
 
-run: $(PROG)
+run: clear $(PROG)
 ifeq ($(OS),Windows_NT)
 	-@.\$(PROG)
 else
+	@echo " "
+	@echo " -- run --"
 	@echo ./$(PROG)
 	@./$(PROG)
 	@echo exit
 endif
+
+clear:
+	clear
 
 $(PROG): temp.ll
 ifeq ($(OS),Windows_NT)
@@ -28,6 +33,9 @@ temp.ll: src.nl nlc nlc
 ifeq ($(OS),Windows_NT)
 	powershell.exe -Command "type src.nl | .\nlc.exe"
 else
+	@echo " "
+	@echo " -- compile --"
+	@echo " "
 	./nlc < src.nl
 endif
 
@@ -36,7 +44,7 @@ ifeq ($(OS),Windows_NT)
 	powershell.exe -Command "g++ $^ $(LLVM) -o nlc.exe"
 else
 	@echo "g++ ... -o $@"
-	@g++ $^ $(LLVM) -o $@
+	@g++ $^ $(LLVM) -fexceptions -o $@
 endif
 
 parser.tab.cpp: parser.ypp scanner.c

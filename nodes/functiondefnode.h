@@ -10,19 +10,19 @@ class FunctionDefNode : public StatementNode {
 public:
     FunctionDefNode(int line, 
                     char *id, 
-                    std::vector<ParamDefNode*> *params, // CHANGED TYPE
+                    std::vector<ParamDefNode*> *params,
                     std::vector<StatementNode*> *body);
     ~FunctionDefNode();
 
     const std::string& getName() const { return name; }
-    const std::vector<ParamDefNode*>* getParams() const { return params; } // CHANGED TYPE
+    const std::vector<ParamDefNode*>* getParams() const { return params; }
     const std::vector<StatementNode*>* getBody() const { return body; }
 
     void accept(class Visitor &v) override;
 
 private:
     std::string name;
-    std::vector<ParamDefNode*> *params; // CHANGED TYPE
+    std::vector<ParamDefNode*> *params;
     std::vector<StatementNode*> *body;
 };
 

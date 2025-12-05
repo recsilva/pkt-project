@@ -25,6 +25,9 @@
   char *idName;
   class Node *node;
   class ExpNode *expNode;
+
+  class TypeNode *typeNode;
+
   class StatementNode *statementNode;
   std::vector<class StatementNode*> *statementList;
   class ParamDefNode *paramDefNode;
@@ -58,6 +61,10 @@
 %token WHILE
 %token DEFINE
 
+%token INT_TYPE FLT_TYPE CHR_TYPE
+%token STR_TYPE INT_ARRAY_TYPE FLT_ARRAY_TYPE
+
+
 //     <= >= == !=  <  >
 %token LE GE EQ NE LT GT
 
@@ -71,6 +78,8 @@
 %type <paramDefNode> parameter
 %type <argList> arguments
 %type <expNode> function_call
+
+%type <typeNode> type_specifier
 
 %type <node> program
 %left   PLUS MINUS
@@ -88,17 +97,25 @@ block: BRACE_LEFT BRACE_RIGHT { $$ = new std::vector<StatementNode*>(); }
      | BRACE_LEFT statements BRACE_RIGHT { $$ = $2; }
 ;
 
+type_specifier: INT_TYPE  { $$ = new TypeNode(yylineno, TypeNode::INT); }
+              | FLT_TYPE  { $$ = new TypeNode(yylineno, TypeNode::FLT); }
+              | CHR_TYPE  { $$ = new TypeNode(yylineno, TypeNode::CHR); }
+              | STR_TYPE  { $$ = new TypeNode(yylineno, TypeNode::STRING); }
+              | INT_ARRAY_TYPE { $$ = new TypeNode(yylineno, TypeNode::INT_ARRAY); }
+              | FLT_ARRAY_TYPE { $$ = new TypeNode(yylineno, TypeNode::FLT_ARRAY); }
+              ;
+
 statements: statement { 
                 // First statement creates a new vector containing itself
                 $$ = new std::vector<StatementNode*>(); 
                 $$->push_back($1); 
-                  std::cout << "STATEMENT 1st part" <<  std::endl;
+                 // std::cout << "STATEMENT 1st part" <<  std::endl;
             }
     | statements statement { 
                 // Subsequent statements push onto the existing vector
                 $1->push_back($2); 
                 $$ = $1; 
-                  std::cout << "STATENENT 2nd part" <<  std::endl;
+                 // std::cout << "STATENENT 2nd part" <<  std::endl;
             }
 ;
 
@@ -124,12 +141,7 @@ parameters: parameter {
 ;
 
 // --- Parameter Rule: ID or ID : exp (with default value) ---
-parameter: ID { 
-                // Simple parameter: ID (no default value)
-                $$ = new ParamDefNode(yylineno, strdup($1), nullptr); 
-                free($1); 
-            }
-    | ID DEFINE_DEFAULT exp { 
+parameter: ID DEFINE_DEFAULT type_specifier { 
                 // Parameter with default value: ID : exp
                 $$ = new ParamDefNode(yylineno, strdup($1), $3); 
                 free($1); 
@@ -167,7 +179,7 @@ statement:
     | ID ASSIGN exp SEMI { $$ = new AssignmentNode(yylineno, strdup($1), $3); free($1); }
     | exp SEMI { $$ = new StatementNode(yylineno, $1); }
     
-    | PRINT PAREN_LEFT exp PAREN_RIGHT SEMI { $$ = new PrintNode(yylineno,$3);  std::cout << "PRINT" <<  std::endl;}
+    | PRINT PAREN_LEFT exp PAREN_RIGHT SEMI { $$ = new PrintNode(yylineno,$3);  /*std::cout << "PRINT" <<  std::endl;*/}
     ;
 
 exp:

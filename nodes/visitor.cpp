@@ -139,6 +139,10 @@ void Visitor::visit(FunctionCallNode *node){
     std::cout << "func call output not implemented\n";
 }
 
+void Visitor::visit(TypeNode *node){
+
+}
+
 void Visitor::visit(OpenNode *node){
 
 }
