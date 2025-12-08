@@ -1362,6 +1362,15 @@ void LLVMVisitor::visit(PrintNode *node){
     
     llvm::Type *ptrType;
     
+    // std::string typestring;
+    // llvm::raw_string_ostream abortas(typestring);
+    // printVal->getType()->print(abortas);
+    // std::cout << "\n\n" << typestring << std::endl;
+
+    // if(llvm::ArrayType *newPrintType = llvm::dyn_cast<llvm::ArrayType>(printVal->getType())){
+    //     std::cout << "this mf is an array type|||||||||||||||\n";
+    // }
+
     if(printVal->hasNUsesOrMore(1)){
         for (llvm::User *U : printVal->users()){
             if (llvm::LoadInst *Li = llvm::dyn_cast<llvm::LoadInst>(U)){
@@ -1413,6 +1422,11 @@ void LLVMVisitor::visit(PrintNode *node){
         if (llvm::ArrayType *arrayType = llvm::dyn_cast<llvm::ArrayType>(ptrType)){
             llvm::Type *elementType = arrayType->getElementType();
             unsigned numElements = arrayType->getNumElements();
+
+            std::string XD;
+            llvm::raw_string_ostream XDD(XD);
+            elementType->print(XDD);
+            std::cout << XD << std::endl;
 
             //llvm::Value *arrayPtr = builder.CreateAlloca(arrayType, nullptr, "array.ptr");
             
@@ -1504,39 +1518,37 @@ void LLVMVisitor::visit(PrintNode *node){
 
 
         }
-    }else{
-        if (llvm::PointerType* PT = llvm::dyn_cast<llvm::PointerType>(printVal->getType())){
-
-            std::cout << "SDFSDFSDFSDFSDFSDFSDFS\n";
-            std::string typestring1;
-            llvm::raw_string_ostream abortas1(typestring1);
-            printVal->getType()->print(abortas1);
-            std::cout << typestring1 << std::endl;
-        }
-        
     }
 
     if(ret){
-
-        if (floatInst) {
+        if(printVal->getType()->isArrayTy()){
+            ptrType = printVal->getType()->getArrayElementType();
+            // std::string asdf;
+            // llvm::raw_string_ostream asd(asdf);
+            // ptrType->print(asd);
+            // std::cout << "\n\n" << asdf << "\n\n";
+        }else{
+            ptrType = printVal->getType();
+        }
+        if (ptrType->isDoubleTy()) {
             //if float make sure its a double and change to %f
             if (!ptrType->isDoubleTy())
                 printVal = builder.CreateSIToFP(printVal, builder.getDoubleTy());
                 
             formatStr = builder.CreateGlobalStringPtr("%f\n");
-
             //if its a pointer and i8 length change to %s for strings
         } else if (ptrType->isPointerTy()){
             //llvm::PointerType *ptrType = llvm::dyn_cast<llvm::PointerType>(printVal->getType());
 
             if (ptrType == builder.getInt8Ty()->getPointerTo()){
                 formatStr = builder.CreateGlobalStringPtr("%s\n");
+
             }
 
             //if its length of i8 change to %c for chars
         } else if (ptrType->isIntegerTy(8)){
             formatStr = builder.CreateGlobalStringPtr("%c\n");
-
+            
             //default for integers, make sure its int and change to %d
         } else {
 

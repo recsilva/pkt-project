@@ -10,4 +10,47 @@ def int fibonacci(i:int){
     }
 }
 
+a = 6;
+b = 6.9;
+c = '4';
+d = "420";
+e[5]:6;
+f[5]:6.9;
+g[5]:'4';
+h[5]:"420";
+i = 1;
+j = 2.2;
+k = 's';
+l = "as";
+i = e[1];
+k = g[1];
+l = h[1];
+print("printing normal types");
+print("|");
+print("V");
+print(a);
+print(b);
+print(c);
+print(d);
+print("============================================================");
+print("printing array of all types");
+print("|");
+print("V");
+print(e);
+print(f);
+print(g);
+print(h);
+print("============================================================");
+print("printing an ellement of an array of all types");
+print("|");
+print("V");
+print(e[0]);
+print(f[0]);
+print(g[0]);
+print(h[0]);
+print("============================================================");
+print("printing a vriable with asign value of an array");
+print("|");
+print("V");
+
 print(fibonacci(40));

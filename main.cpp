@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
     llvm::LLVMContext context;
     std::unique_ptr<llvm::Module> mod;
     mod = std::make_unique<llvm::Module>("ECTLang module", context);
-    mod->setTargetTriple(llvm::Triple("x86_64-pc-linux-gnu"));   
+    //mod->setTargetTriple(llvm::Triple("x86_64-pc-linux-gnu"));   
     yyparse();
     llvm::StringRef filename = "temp.ll";
     std::error_code ec;
