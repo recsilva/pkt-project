@@ -85,8 +85,7 @@
 %type <node> program
 %left   PLUS MINUS
 %left   MULT DIV
-%left   LE GE EQ NE LT GT  // <-- NEW PRECEDENCE LEVEL
-// %prec  UMINUS
+%left   LE GE EQ NE LT GT
 
 //always define most specific first, least specific last in statements
 %%
@@ -107,30 +106,24 @@ type_specifier: INT_TYPE  { $$ = new TypeNode(yylineno, TypeNode::INT); }
               ;
 
 statements: statement { 
-                // First statement creates a new vector containing itself
                 $$ = new std::vector<StatementNode*>(); 
                 $$->push_back($1); 
-                 // std::cout << "STATEMENT 1st part" <<  std::endl;
             }
     | statements statement { 
-                // Subsequent statements push onto the existing vector
                 $1->push_back($2); 
                 $$ = $1; 
-                 // std::cout << "STATENENT 2nd part" <<  std::endl;
             }
 ;
 
 
 // FUNCTION STATEMENTS
-// --- Function Definition Structure: ID(params){block} ---
 function_definition: 
       DEFINE type_specifier ID PAREN_LEFT PAREN_RIGHT block
-      { $$ = new FunctionDefNode(yylineno, $2, strdup($3), new std::vector<ParamDefNode*>(), $6); free($3);} // No params
+      { $$ = new FunctionDefNode(yylineno, $2, strdup($3), new std::vector<ParamDefNode*>(), $6); free($3);}
     | DEFINE type_specifier ID PAREN_LEFT parameters PAREN_RIGHT block
-      { $$ = new FunctionDefNode(yylineno, $2, strdup($3), $5, $7); free($3);} // With params
+      { $$ = new FunctionDefNode(yylineno, $2, strdup($3), $5, $7); free($3);}
 ;
 
-// --- Parameter List (List of 'parameter' non-terminals) ---
 parameters: parameter { 
                 $$ = new std::vector<ParamDefNode*>(); 
                 $$->push_back($1); 
@@ -141,28 +134,24 @@ parameters: parameter {
             }
 ;
 
-// --- Parameter Rule: ID or ID : exp (with default value) ---
 parameter: ID DEFINE_DEFAULT type_specifier { 
-                // Parameter with default value: ID : exp
                 $$ = new ParamDefNode(yylineno, strdup($1), $3); 
                 free($1); 
             }
 ;
 
-// --- Argument List (used in function calls) ---
 arguments: exp { $$ = new std::vector<ExpNode*>(); $$->push_back($1); }
     | arguments COMMA exp { $1->push_back($3); $$ = $1; }
 ;
 
-// --- Function Call Expression: ID(args) ---
 function_call: 
-      ID PAREN_LEFT PAREN_RIGHT { $$ = new FunctionCallNode(yylineno, strdup($1), new std::vector<ExpNode*>()); free($1); } // No args
-    | ID PAREN_LEFT arguments PAREN_RIGHT { $$ = new FunctionCallNode(yylineno, strdup($1), $3); free($1); } // With args
+      ID PAREN_LEFT PAREN_RIGHT { $$ = new FunctionCallNode(yylineno, strdup($1), new std::vector<ExpNode*>()); free($1); }
+    | ID PAREN_LEFT arguments PAREN_RIGHT { $$ = new FunctionCallNode(yylineno, strdup($1), $3); free($1); }
 ;
 
 
 statement: 
-      PRINT PAREN_LEFT exp PAREN_RIGHT SEMI { $$ = new PrintNode(yylineno,$3);  /*std::cout << "PRINT" <<  std::endl;*/}
+      PRINT PAREN_LEFT exp PAREN_RIGHT SEMI { $$ = new PrintNode(yylineno,$3);}
     |  function_definition { $$ = $1; }
     | RETURN exp SEMI { $$ = new ReturnNode(yylineno, $2); }
     | ID ARRAY_START exp ARRAY_END DEFINE_DEFAULT exp SEMI { $$ = new ArrayDefNode(yylineno, strdup($1), $3, $6); free($1); } 
@@ -180,7 +169,6 @@ statement:
 
     | ID ASSIGN exp SEMI { $$ = new AssignmentNode(yylineno, strdup($1), $3); free($1); }
     | exp SEMI { $$ = new StatementNode(yylineno, $1); }
-    
     
     ;
 

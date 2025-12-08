@@ -1,7 +1,13 @@
-string = "mother?";
-
-def str func(string:str){
-    return string;
+def int fibonacci(i:int){
+    if (i == 0){
+        return 0;
+    }
+    if(i == 1){
+        return 1;
+    }
+    if(i > 1){
+        return fibonacci(i - 1) + fibonacci(i - 2);
+    }
 }
-print(func(string));
-print(string);
+
+print(fibonacci(40));
