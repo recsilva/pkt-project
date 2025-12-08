@@ -8,7 +8,7 @@ CHILDREN := (Get-ChildItem nodes\*.cpp)
 
 .PHONY: run, build, clear
 
-run: $(PROG)
+run: $(PROG) clear
 ifeq ($(OS),Windows_NT)
 	-@.\$(PROG)
 else

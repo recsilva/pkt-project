@@ -30,7 +30,9 @@
 [0-9]+\.[0-9]+ { yylval.floatVal = atof(yytext); return FLOAT_LITERAL; }
 [0-9]+        { yylval.intVal = atoi(yytext); return INTEGER_LITERAL;}
 "'"[^\n\'\\]"'" { yylval.intVal = yytext[1]; return CHAR_LITERAL; }
-\"[^\n"]*\"   { int content_length = yyleng -2; char *content = (char*)malloc(content_length + 1); strncpy(content,yytext+1,content_length); content[content_length]= '\0'; yylval.idName = content; return STRING_LITERAL; }
+\"[^\n"]*\"   { int content_length = yyleng -2; char *content = (char*)malloc(content_length + 1); 
+      strncpy(content,yytext+1,content_length); content[content_length]= '\0'; yylval.idName = content; return STRING_LITERAL; }
+      
 "+"           { return PLUS; }
 "-"           { return MINUS; }
 "*"           { return MULT; }
