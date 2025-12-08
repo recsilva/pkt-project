@@ -72,6 +72,7 @@ private:
     // The "return value" from the previous visit method.
     llvm::Value *ret;
     llvm::Type *currentType;
+    llvm::Type *currentTypeNonPointer;
     bool floatInst;
 
     // Helper function to create stack allocation in the entry block

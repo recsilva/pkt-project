@@ -1,9 +1,9 @@
-def func(FUNCAR:int[], STRING:str){
-    print("v");
-    print(FUNCAR[1]);
-    print(STRING);
-    print("^");
-}
-ARRAY[5]:9;
-func(ARRAY, "BOO!");
+arr1[10]:1;
+arr2[10]:2.2;
+arr3[10]:'3';
+arr4[10]:"45";
 
+print(arr1);
+print(arr2);
+print(arr3[2]);
+print(arr4);

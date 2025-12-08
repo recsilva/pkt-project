@@ -20,7 +20,11 @@ else
 endif
 
 clear:
+ifeq ($(OS),Windows_NT)
+	
+else
 	clear
+endif
 
 $(PROG): temp.ll
 ifeq ($(OS),Windows_NT)
@@ -41,7 +45,7 @@ endif
 
 nlc: main.cpp parser.tab.cpp $(DIRS)
 ifeq ($(OS),Windows_NT)
-	powershell.exe -Command "g++ $^ $(LLVM) -o nlc.exe"
+	powershell.exe -Command "g++ $^ $(LLVM) -o nlc.exe -fexceptions"
 else
 	@echo "g++ ... -o $@"
 	@g++ $^ $(LLVM) -fexceptions -o $@
