@@ -15,6 +15,7 @@
 "if"          { return IF; }
 "while"       { return WHILE; }
 "def"         { return DEFINE; }
+"return"      { return RETURN; }
 
 "int[]"       { return INT_ARRAY_TYPE; }
 "flt[]"       { return FLT_ARRAY_TYPE; }

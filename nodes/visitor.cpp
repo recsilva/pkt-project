@@ -162,3 +162,7 @@ void Visitor::visit(CloseNode *node){
 void Visitor::visit(PrintNode *node){
 
 }
+
+void Visitor::visit(ReturnNode *node){
+
+}

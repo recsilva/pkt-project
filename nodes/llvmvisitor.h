@@ -48,6 +48,8 @@ public:
     void visit(FunctionDefNode *node); 
     void visit(FunctionCallNode *node);
 
+    void visit(ReturnNode *node);
+
     void visit(OpenNode *node);
     void visit(ReadNode *node);
     void visit(WriteNode *node);

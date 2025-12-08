@@ -348,82 +348,104 @@ void LLVMVisitor::visit(TypeNode *node) {
     //printf("\n");
 }
 
+void LLVMVisitor::visit(ReturnNode *node) {
+    // 1. Evaluate the return expression
+    node->getExp()->accept(*this);
+
+    llvm::Value *retVal = ret;
+
+    // 2. Get the current function we are generating code for
+    llvm::Function *parentFunc = builder.GetInsertBlock()->getParent();
+    llvm::Type *expectedType = parentFunc->getReturnType();
+
+    retVal->getType()->print(llvm::errs());
+
+    // 3. Type Coercion (Int <-> Float)
+    // If the expression type doesn't match the function signature, cast it.
+    if (retVal->getType() != expectedType) {
+        if (retVal->getType()->isIntegerTy() && expectedType->isFloatingPointTy()) {
+            retVal = builder.CreateSIToFP(retVal, expectedType, "ret.cast");
+        } 
+        else if (retVal->getType()->isFloatingPointTy() && expectedType->isIntegerTy()) {
+            retVal = builder.CreateFPToSI(retVal, expectedType, "ret.cast");
+        }
+    }
+
+    // 4. Create the LLVM Return Instruction
+    builder.CreateRet(retVal);
+    
+    // Clear 'ret' because a statement doesn't result in a value for the visitor
+    ret = nullptr; 
+}
+
 void LLVMVisitor::visit(FunctionDefNode *node) {
     // Save current state (required for nesting functions and statements)
     llvm::BasicBlock *oldBlock = builder.GetInsertBlock();
     auto outerSymbolTable = symbolTable;
-
     symbolTable.clear(); // Initialize fresh symbol table for new function scope
 
-    // 1. Determine function signature
-    // NOTE: If you add explicit return types (e.g., 'def int main(){...}'), 
-    // you would also visit the return type here. Sticking to current float assumption.
-    llvm::Type *retType = builder.getFloatTy(); 
+    
+    node->getReturnType()->accept(*this);
+    llvm::Type *retType = currentType;
+
+    // Fallback if something went wrong
+    if (!retType) retType = builder.getVoidTy();
     
     std::vector<llvm::Type*> paramTypes;
-    // REPLACING THE HACK WITH EXPLICIT TYPE VISITING
-    // Determine parameter types using the explicit TypeNode*
+    // --- Determine Parameter Types ---
     for (ParamDefNode *paramDef : *node->getParams()) {
-        // 1. Visit the TypeNode to populate currentType
         paramDef->getType()->accept(*this);
-        
-        // 2. Retrieve the result
-        llvm::Type *paramLLVMType = currentType;
-        
-        // Error check
-        if (!paramLLVMType) {
-            // Handle error and return
-            return; 
-        }
-        paramTypes.push_back(paramLLVMType); 
+        paramTypes.push_back(currentType); 
     }
-    // END OF CLEAN TYPE RESOLUTION
+
+    // Create Function Type
     llvm::FunctionType *funcType = llvm::FunctionType::get(retType, paramTypes, false);
-    // 2. Create the LLVM Function and register it (No Change)
+    
+    // Create Function
     llvm::Function *F = llvm::Function::Create(
         funcType, llvm::Function::ExternalLinkage, node->getName(), mod.get());
     
     functionTable[node->getName()].push_back(F);
 
-    // 3. Set up parameters and entry block (No Change)
+    // Create Entry Block
     llvm::BasicBlock *entryBlock = llvm::BasicBlock::Create(context, "entry", F);
-
     builder.SetInsertPoint(entryBlock);
 
+
+    // --- Handle Arguments (Stack Allocation) ---
     auto paramIt = F->arg_begin();
     auto paramDefIt = node->getParams()->begin();
-    
 
     for (; paramIt != F->arg_end(); ++paramIt, ++paramDefIt) {
         ParamDefNode *paramDef = *paramDefIt;
-        const std::string& paramName = paramDef->getName();
+        std::string paramName = paramDef->getName();
         paramIt->setName(paramName);
-        
-        // Allocate stack space and store the passed argument (making it a local variable)
-        // The type (paramIt->getType()) is now guaranteed to be correct from step 1.
         
         llvm::AllocaInst *Alloca = createEntryBlockAlloca(F, paramName, paramIt->getType());
         builder.CreateStore(paramIt, Alloca);
-        placeComent();
         symbolTable[paramName] = Alloca;
     }
 
-    // 4. Visit the function body (No Change)
+    // --- Visit Body ---
     for (StatementNode *stmt : *node->getBody()) {
         stmt->accept(*this);
     }
     
-    // 5. Ensure function is terminated (No Change)
+    // --- Default Return (Safety) ---
+    // If the user forgot a return statement, add a default one (0 or void)
     if (!builder.GetInsertBlock()->getTerminator()) {
-        builder.CreateRet(llvm::ConstantFP::get(context, llvm::APFloat(0.0f)));
+        if (retType->isVoidTy())
+            builder.CreateRetVoid();
+        else if (retType->isFloatingPointTy())
+            builder.CreateRet(llvm::ConstantFP::get(context, llvm::APFloat(0.0f)));
+        else
+            builder.CreateRet(llvm::ConstantInt::get(retType, 0));
     }
 
-    // 6. Restore previous context (No Change)
+    // Restore context
     symbolTable = outerSymbolTable;
-    if (oldBlock) {
-        builder.SetInsertPoint(oldBlock);
-    }
-    ret = nullptr; 
+    if (oldBlock) builder.SetInsertPoint(oldBlock);
+    ret = nullptr;
 }
 
 void LLVMVisitor::visit(FunctionCallNode *node) {

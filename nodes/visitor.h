@@ -38,6 +38,8 @@
 #include "functiondefnode.h"
 #include "functioncallnode.h"
 
+#include "returnnode.h"
+
 class Visitor {
 public:
     virtual void visit(ProgramNode *node);
@@ -67,6 +69,7 @@ public:
     virtual void visit(WhileNode *node);
     virtual void visit(FunctionDefNode *node);
     virtual void visit(FunctionCallNode *node);
+    virtual void visit(ReturnNode *node);
 };
 
 #endif

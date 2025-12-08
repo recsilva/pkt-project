@@ -4,10 +4,12 @@
 #include "visitor.h" 
 
 FunctionDefNode::FunctionDefNode(int line, 
+                                 TypeNode *type,
                                  char *id, 
                                  std::vector<ParamDefNode*> *params, 
                                  std::vector<StatementNode*> *body)
     : StatementNode(line, nullptr),
+      returnType(type),
       name(id), 
       params(params), 
       body(body)
